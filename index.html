@@ -477,6 +477,25 @@
             fill: none;
             opacity: 0.8;
         }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--card-glass) 25%, rgba(255, 255, 255, 0.1) 50%, var(--card-glass) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+            color: transparent !important;
+            user-select: none;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
     </style>
 </head>
 
@@ -605,6 +624,87 @@
             display: inline-block;
             margin-right: 5px;
         }
+
+        /* Timeline */
+        .timeline-container {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            mask-image: linear-gradient(to right, black 80%, transparent 100%);
+        }
+
+        .timeline-event {
+            flex: 0 0 auto;
+            min-width: 140px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border-left: 3px solid var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .timeline-event.active {
+            border-left-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        /* Mobile Nav */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--header-bg);
+            border-top: 1px solid var(--card-border);
+            padding: 10px 0;
+            justify-content: space-around;
+            backdrop-filter: blur(20px);
+            z-index: 900;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 10px;
+            color: var(--text-secondary);
+            gap: 4px;
+            text-decoration: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: var(--accent-blue);
+        }
+
+        .nav-item span {
+            font-size: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-nav {
+                display: flex;
+            }
+
+            .header-controls .icon-btn {
+                display: none;
+            }
+
+            /* Hide desktop icons */
+            .header-controls .nav-select {
+                display: none;
+            }
+
+            .analyst-sidebar {
+                width: 100%;
+            }
+
+            /* Full width sidebar on mobile */
+        }
     </style>
 
     <!-- Chart Modal -->
@@ -647,6 +747,48 @@
         </div>
     </div>
 
+    <!-- Sector Modal (Drill Down) -->
+    <div class="chart-modal" id="sector-modal" onclick="if(event.target===this) closeSector()">
+        <div class="chart-content" style="max-width:800px; height:80%">
+            <div class="chart-header">
+                <div>
+                    <h2 id="sector-title" style="font-family:var(--font-serif)">Sector Details</h2>
+                    <div style="font-size:12px; opacity:0.6" id="sector-subtitle">Performance Overview</div>
+                </div>
+                <button onclick="closeSector()"
+                    style="background:none;border:none;color:inherit;font-size:20px;cursor:pointer">✕</button>
+            </div>
+            <div style="overflow-y:auto; flex:1">
+                <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                    <thead>
+                        <tr style="text-align:left; border-bottom:1px solid var(--card-border); opacity:0.7">
+                            <th style="padding:10px">Asset</th>
+                            <th style="padding:10px">Price</th>
+                            <th style="padding:10px">Trend</th>
+                            <th style="padding:10px; text-align:right">Change</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sector-list"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav">
+        <button class="nav-item active"
+            onclick="setView('grid'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); this.classList.add('active')">
+            <span>📰</span> Home
+        </button>
+        <button class="nav-item"
+            onclick="setView('heatmap'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); this.classList.add('active')">
+            <span>📊</span> Market
+        </button>
+        <button class="nav-item" onclick="toggleSidebar()">
+            <span>🤖</span> Analyst
+        </button>
+    </nav>
+
     <!-- Toasts -->
     <div class="toast-container" id="toast-container"></div>
 
@@ -657,9 +799,59 @@
         // --- State ---
         let currentCurrency = 'USD';
         let currentAssetId = null;
+        let isLoading = true;
         let filteredArticles = []; // Global for interactions
         const rates = { 'USD': 1, 'EUR': 0.92, 'GBP': 0.79 };
         const syms = { 'USD': '$', 'EUR': '€', 'GBP': '£' };
+
+        // --- Data Service ---
+        const DataService = {
+            coingeckoMap: {
+                'BTC': 'bitcoin', 'ETH': 'ethereum', 'SOL': 'solana', 'BNB': 'binancecoin',
+                'XRP': 'ripple', 'ADA': 'cardano', 'DOGE': 'dogecoin', 'DOT': 'polkadot',
+                'LINK': 'chainlink', 'MATIC': 'matic-network', 'LTC': 'litecoin',
+                'UNI': 'uniswap', 'AVAX': 'avalanche-2', 'SHIB': 'shiba-inu', 'TON': 'the-open-network'
+            },
+
+            async fetchCryptoPrices() {
+                try {
+                    const ids = Object.values(this.coingeckoMap).join(',');
+                    const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
+                    if (!res.ok) throw new Error('API Rate Limit');
+                    const data = await res.json();
+                    return data;
+                } catch (e) {
+                    console.warn('Crypto API Error (using sim):', e);
+                    return null;
+                }
+            },
+
+            async updateAssets() {
+                const cryptoData = await this.fetchCryptoPrices();
+
+                assets.forEach(a => {
+                    let price = a.price;
+
+                    if (a.type === 'crypto' && cryptoData && DataService.coingeckoMap[a.id]) {
+                        const newPrice = cryptoData[DataService.coingeckoMap[a.id]]?.usd;
+                        if (newPrice) price = newPrice;
+                    } else {
+                        // Simulation Fallback for Stocks/Others (or if API fails)
+                        const change = (Math.random() - 0.5) * (a.price * 0.005);
+                        price += change;
+                    }
+
+                    a.price = price;
+                    a.history.push(price);
+                    if (a.history.length > 100) a.history.shift();
+                });
+
+                renderTicker();
+                renderHeatmap(); // Update heatmap values
+                isLoading = false;
+                if (currentAssetId) openChart(currentAssetId); // Live chart update
+            }
+        };
 
 
 
@@ -830,6 +1022,12 @@
 
         // --- Renderers ---
         function renderTicker() {
+            if (isLoading) {
+                document.getElementById('ticker').innerHTML = Array(10).fill('<div class="ticker-item skeleton" style="width:100px;height:20px;margin-right:30px"></div>').join('');
+                document.getElementById('ticker-2').innerHTML = '';
+                return;
+            }
+
             const html = assets.map(a => {
                 const hist = a.history.slice(-10);
                 const color = hist[9] > hist[0] ? 'var(--bullish)' : 'var(--bearish)';
@@ -846,36 +1044,37 @@
             document.getElementById('ticker-2').innerHTML = html;
         }
 
-        // --- Economic Calendar ---
+        // --- Economic Calendar (Timeline) ---
         function updateCalendar() {
             const events = [
-                { time: '14:30', event: 'US Non-Farm Payrolls', impact: 'high' },
-                { time: '15:00', event: 'ISM Manufacturing PMI', impact: 'medium' },
-                { time: '16:00', event: 'Fed Chair Speech', impact: 'high' },
-                { time: 'Tomorrow', event: 'ECB Rate Decision', impact: 'high' }
+                { time: '14:30', event: 'US Non-Farm Payrolls', impact: 'high', status: 'past' },
+                { time: '15:00', event: 'ISM Manufacturing PMI', impact: 'medium', status: 'past' },
+                { time: 'NOW', event: 'Market Open', impact: 'high', status: 'active' },
+                { time: '16:00', event: 'Fed Chair Speech', impact: 'high', status: 'future' },
+                { time: 'Tomorrow', event: 'ECB Rate Decision', impact: 'high', status: 'future' }
             ];
 
             const html = `
                 <div style="margin:20px 0; border-top:1px solid var(--card-border); padding-top:20px">
                     <div style="font-weight:600; font-size:14px; margin-bottom:15px; display:flex; justify-content:space-between">
-                        <span data-i18n="calendar">Economic Calendar</span>
-                        <span style="opacity:0.5; font-size:11px">GMT-4</span>
+                        <span data-i18n="calendar">Market Timeline</span>
+                        <span style="opacity:0.5; font-size:11px">EST</span>
                     </div>
+                    <div class="timeline-container">
                     ${events.map(e => `
-                        <div class="calendar-item">
-                            <div>
-                                <div style="font-weight:500">${e.event}</div>
-                                <div class="cal-date">${e.time}</div>
-                            </div>
-                            <div title="${e.impact} impact">
-                                <span class="cal-impact" style="background:${e.impact === 'high' ? 'var(--bearish)' : (e.impact === 'medium' ? 'var(--neutral)' : 'var(--bullish)')}"></span>
+                        <div class="timeline-event ${e.status === 'active' ? 'active' : ''}">
+                            <div style="opacity:0.6; margin-bottom:4px">${e.time}</div>
+                            <div style="font-weight:600; margin-bottom:4px">${e.event}</div>
+                            <div style="display:flex;align-items:center;gap:5px">
+                                <span class="cal-impact" style="background:${e.impact === 'high' ? 'var(--bearish)' : 'var(--neutral)'}"></span>
+                                <span style="font-size:10px;opacity:0.8">${e.impact.toUpperCase()}</span>
                             </div>
                         </div>
                     `).join('')}
+                    </div>
                 </div>
             `;
 
-            // Append to sidebar if not exists, else update
             const existing = document.getElementById('eco-calendar');
             if (existing) existing.innerHTML = html;
             else {
@@ -912,7 +1111,16 @@
             renderHeatmap();
         }
 
-        // --- Renderers Updated for Screener ---
+        // --- Renderers Updated for Screener & Sentiment ---
+        function getSentiment(text) {
+            const pos = ['surge', 'jump', 'record', 'soar', 'rally', 'approval', 'breakthrough', 'profit', 'beat', 'bull', 'trillion'];
+            const neg = ['drop', 'fall', 'crash', 'miss', 'fear', 'crisis', 'selloff', 'warn', 'struggle', 'bubble', 'rout', 'threaten'];
+            const txt = text.toLowerCase();
+            if (pos.some(w => txt.includes(w))) return { label: 'Positive', color: 'var(--bullish)' };
+            if (neg.some(w => txt.includes(w))) return { label: 'Negative', color: 'var(--bearish)' };
+            return { label: 'Neutral', color: 'var(--text-secondary)' };
+        }
+
         function renderGrid() {
             const grid = document.getElementById('grid-view');
             let allArticles = (typeof marketData !== 'undefined' ? marketData : []).flatMap(s => s.articles.map(a => ({ ...a, source: s.source })));
@@ -930,16 +1138,25 @@
 
             filteredArticles = allArticles;
 
-            grid.innerHTML = filteredArticles.length ? filteredArticles.map((a, i) => `
+            grid.innerHTML = filteredArticles.length ? filteredArticles.map((a, i) => {
+                const sent = getSentiment(a.headline);
+                return `
                 <div class="article-card" onclick="openNews(${i})" style="cursor:pointer">
-                    <div style="font-size:10px;opacity:0.6;margin-bottom:5px;text-transform:uppercase">${a.source || 'News'}</div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                         <div style="font-size:10px;opacity:0.6;text-transform:uppercase">${a.source || 'News'}</div>
+                         <div style="font-size:9px;padding:2px 6px;border-radius:4px;background:${sent.color}20;color:${sent.color}">${sent.label}</div>
+                    </div>
                     <div class="headline">${a.headline}</div>
                     <div style="font-size:13px;opacity:0.8">${a.snippet}</div>
-                </div>
-            `).join('') : '<div style="grid-column:1/-1;text-align:center;padding:40px;opacity:0.5">No news matches this filter.</div>';
+                </div>`;
+            }).join('') : '<div style="grid-column:1/-1;text-align:center;padding:40px;opacity:0.5">No news matches this filter.</div>';
         }
 
         function renderHeatmap() {
+            if (isLoading) {
+                document.getElementById('heatmap-view').innerHTML = Array(6).fill('<div class="heatmap-cell skeleton"></div>').join('');
+                return;
+            }
             const sectors = {};
             // Filter Assets
             const filteredAssets = assets.filter(a => {
@@ -962,7 +1179,7 @@
                 const items = sectors[s];
                 const change = items.reduce((acc, i) => acc + (i.price - i.history[0]) / i.history[0], 0) / items.length;
                 const hue = change >= 0 ? 142 : 0;
-                return `<div class="heatmap-cell" style="background:hsl(${hue}, ${Math.min(Math.abs(change) * 5000, 80)}%, 30%)">
+                return `<div class="heatmap-cell" onclick="showSectorDetails('${s}')" style="background:hsl(${hue}, ${Math.min(Math.abs(change) * 5000, 80)}%, 30%)">
                     <div style="font-size:18px;font-weight:bold">${s}</div>
                     <div>${(change * 100).toFixed(2)}%</div>
                     <div style="font-size:11px;opacity:0.7;margin-top:5px">${items.length} Assets</div>
@@ -984,6 +1201,11 @@
             const asset = assets.find(a => a.id === id);
             document.getElementById('chart-modal').style.display = 'flex';
             document.getElementById('chart-title').innerText = `${asset.name} (${asset.id})`;
+
+            // Populate Comparison Dropdown
+            const compSelect = document.getElementById('chart-compare');
+            compSelect.innerHTML = `<option value="">Compare...</option>` +
+                assets.filter(a => a.id !== id).map(a => `<option value="${a.id}">vs ${a.name}</option>`).join('');
 
             if (chart) chart.remove();
 
@@ -1037,19 +1259,58 @@
             document.getElementById('news-modal').style.display = 'none';
         }
 
+        // --- Sector Drill-down ---
+        function showSectorDetails(sector) {
+            const items = assets.filter(a => a.sector === sector);
+            document.getElementById('sector-title').innerText = sector;
+            document.getElementById('sector-subtitle').innerText = `${items.length} Assets in this sector`;
+
+            document.getElementById('sector-list').innerHTML = items.map(a => {
+                const change = (a.price - a.history[0]) / a.history[0];
+                const color = change >= 0 ? 'var(--bullish)' : 'var(--bearish)';
+                const hist = a.history.slice(-10);
+                const points = hist.map((v, i) => `${(i / 9) * 50},${15 - ((v - Math.min(...hist)) / (Math.max(...hist) - Math.min(...hist))) * 15}`).join(' ');
+
+                return `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer" onclick="openChart('${a.id}');closeSector()">
+                    <td style="padding:15px 10px; font-weight:500">
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <div style="width:24px;height:24px;background:rgba(255,255,255,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px">${a.id[0]}</div>
+                            ${a.name} <span style="opacity:0.5;font-size:10px">${a.id}</span>
+                        </div>
+                    </td>
+                    <td style="padding:10px">${formatPrice(a.price)}</td>
+                    <td style="padding:10px">
+                         <svg width="50" height="15" style="stroke:${color}; fill:none; stroke-width:1.5"><polyline points="${points}"/></svg>
+                    </td>
+                    <td style="padding:10px; text-align:right; color:${color}">${(change * 100).toFixed(2)}%</td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('sector-modal').style.display = 'flex';
+        }
+
+        function closeSector() {
+            document.getElementById('sector-modal').style.display = 'none';
+        }
+
         // --- Comparision Logic ---
         function compareAsset(compareId) {
             if (!compareId || !chart) return;
             const compareSeries = chart.addLineSeries({ color: '#fbbf24', lineWidth: 2, title: compareId });
-            let time = Math.floor(Date.now() / 1000) - (100 * 86400);
-            const mockHistory = [];
-            let p = 100;
-            for (let i = 0; i < 100; i++) {
+
+            // Basic Compare: Normalize to start at same point or just overlay
+            // Ideally we fetch history for `compareId`, here we simulate or use existing asset history
+            const target = assets.find(a => a.id === compareId);
+            if (!target) return;
+
+            let time = Math.floor(Date.now() / 1000) - (target.history.length * 86400);
+            const data = target.history.map(p => {
                 time += 86400;
-                p = p * (1 + (Math.random() - 0.5) * 0.03);
-                mockHistory.push({ time, value: p });
-            }
-            compareSeries.setData(mockHistory);
+                return { time, value: p };
+            });
+
+            compareSeries.setData(data);
             chart.timeScale().fitContent();
         }
 
@@ -1072,15 +1333,9 @@
         }
         function toggleSidebar() { document.body.classList.toggle('sidebar-open'); }
 
-        // --- Simulation ---
-        function simulateMarket() {
-            assets.forEach(a => {
-                const change = (Math.random() - 0.5) * (a.price * 0.005);
-                a.price += change;
-                a.history.push(a.price);
-                a.history.shift();
-            });
-            renderTicker();
+        // --- Simulation / Live Data Loop ---
+        async function simulateMarket() {
+            await DataService.updateAssets();
             updateCurrency(currentCurrency);
         }
 
