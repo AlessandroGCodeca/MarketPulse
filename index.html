@@ -178,43 +178,11 @@
         .ticker {
             display: flex;
             white-space: nowrap;
-            animation: ticker var(--ticker-duration, 80s) linear infinite;
+            animation: ticker 80s linear infinite;
         }
 
         .ticker:hover {
             animation-play-state: paused;
-        }
-
-        @keyframes flash-green {
-            0% {
-                color: var(--bullish);
-                transform: scale(1.1);
-            }
-
-            100% {
-                color: inherit;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes flash-red {
-            0% {
-                color: var(--bearish);
-                transform: scale(1.1);
-            }
-
-            100% {
-                color: inherit;
-                transform: scale(1);
-            }
-        }
-
-        .flash-up {
-            animation: flash-green 0.5s ease-out;
-        }
-
-        .flash-down {
-            animation: flash-red 0.5s ease-out;
         }
 
         .ticker-item {
@@ -571,14 +539,6 @@
             </div>
             <div class="header-controls">
 
-                <!-- Ticker Speed Control -->
-                <div style="display:flex; align-items:center; gap:5px; margin-right:10px" title="Ticker Speed">
-                    <span style="font-size:10px">🐢</span>
-                    <input type="range" min="20" max="120" value="80" oninput="setTickerSpeed(this.value)"
-                        style="width:60px; height:4px">
-                    <span style="font-size:10px">🐇</span>
-                </div>
-
                 <select id="currency" class="nav-select" onchange="updateCurrency(this.value)">
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
@@ -750,11 +710,6 @@
         }
     </style>
 
-    <!-- Ticker Tooltip -->
-    <div id="ticker-tooltip"
-        style="position:fixed; z-index:2000; background:var(--bg-dark); border:1px solid var(--card-border); padding:10px; border-radius:8px; display:none; pointer-events:none; box-shadow:var(--shadow-soft); backdrop-filter:blur(10px)">
-    </div>
-
     <!-- Chart Modal -->
     <div class="chart-modal" id="chart-modal" onclick="if(event.target===this) closeChart()">
         <div class="chart-content">
@@ -848,7 +803,6 @@
         let currentCurrency = 'USD';
         let currentAssetId = null;
         let isLoading = true;
-        let showTickerChange = false; // Toggle state
         let filteredArticles = []; // Global for interactions
         const rates = { 'USD': 1, 'EUR': 0.92, 'GBP': 0.79 };
         const syms = { 'USD': '$', 'EUR': '€', 'GBP': '£' };
@@ -1043,7 +997,6 @@
             setInterval(simulateMarket, 1000);
             setInterval(updateClocks, 1000);
             setInterval(cycleTitle, 3000); // New Dynamic Title
-            setInterval(() => { showTickerChange = !showTickerChange; renderTicker(); }, 5000); // Toggle Ticker Info
             updateClocks();
         }
 
@@ -1083,62 +1036,16 @@
                 const color = hist[9] > hist[0] ? 'var(--bullish)' : 'var(--bearish)';
                 const points = hist.map((v, i) => `${(i / 9) * 40},${20 - ((v - Math.min(...hist)) / (Math.max(...hist) - Math.min(...hist))) * 20}`).join(' ');
 
-                // Icon simulation (using Clearbit for stocks, none for crypto generic)
-                const logo = a.type === 'crypto' ?
-                    `https://assets.coingecko.com/coins/images/1/thumb/bitcoin.png` // Generic fallback for now, ideally mapped
-                    : `https://logo.clearbit.com/${a.name.split(' ')[0]}.com`;
-
-                // Better icon mapping
-                let iconUrl = '';
-                if (a.type === 'crypto') {
-                    const map = { 'BTC': 1, 'ETH': 279, 'SOL': 4128, 'BNB': 825, 'XRP': 44, 'ADA': 975, 'DOGE': 5, 'DOT': 12171 };
-                    if (map[a.id]) iconUrl = `https://assets.coingecko.com/coins/images/${map[a.id]}/thumb/logo.png`;
-                } else {
-                    iconUrl = `https://logo.clearbit.com/${a.name.replace(/\s/g, '').toLowerCase()}.com`;
-                }
-
-                // Display Value (Price or Change)
-                const changePct = ((a.price - a.history[0]) / a.history[0] * 100);
-                const valDisplay = showTickerChange ?
-                    `<span style="color:${changePct >= 0 ? 'var(--bullish)' : 'var(--bearish)'}">${changePct > 0 ? '+' : ''}${changePct.toFixed(2)}%</span>`
-                    : formatPrice(a.price);
-
-                // Flash Class
-                const flashClass = changePct > 0 ? 'flash-up' : 'flash-down';
-
                 return `
-                <div class="ticker-item ${flashClass}" onclick="openChart('${a.id}')" onmouseenter="showTooltip(event, '${a.id}')" onmouseleave="hideTooltip()">
-                    ${iconUrl ? `<img src="${iconUrl}" onerror="this.style.display='none'" style="width:16px;height:16px;border-radius:50%">` : ''}
+                <div class="ticker-item" onclick="openChart('${a.id}')">
                     <span>${a.id}</span>
                     <svg class="sparkline" style="stroke:${color}"><polyline points="${points}"/></svg>
-                    ${valDisplay}
+                    <span>${formatPrice(a.price)}</span>
                 </div>`;
             }).join('');
             document.getElementById('ticker').innerHTML = html;
             document.getElementById('ticker-2').innerHTML = html;
         }
-
-        function setTickerSpeed(val) {
-            document.documentElement.style.setProperty('--ticker-duration', (140 - val) + 's'); // Invert: higher val = faster (lower duration)
-        }
-
-        function showTooltip(e, id) {
-            const a = assets.find(x => x.id === id);
-            if (!a) return;
-            const t = document.getElementById('ticker-tooltip');
-            const high = Math.max(...a.history);
-            const low = Math.min(...a.history);
-            t.innerHTML = `
-                <div style="font-weight:bold;margin-bottom:5px">${a.name}</div>
-                <div style="font-size:11px;opacity:0.8">High: ${formatPrice(high)}</div>
-                <div style="font-size:11px;opacity:0.8">Low: ${formatPrice(low)}</div>
-                <div style="font-size:10px;margin-top:5px;opacity:0.5">Vol: ${(Math.random() * 100).toFixed(1)}M</div>
-            `;
-            t.style.display = 'block';
-            t.style.left = (e.clientX + 10) + 'px';
-            t.style.top = (e.clientY + 20) + 'px';
-        }
-        function hideTooltip() { document.getElementById('ticker-tooltip').style.display = 'none'; }
 
         // --- Economic Calendar (Timeline) ---
         function updateCalendar() {
