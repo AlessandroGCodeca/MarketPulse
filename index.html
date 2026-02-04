@@ -151,27 +151,7 @@
             color: var(--accent-blue);
         }
 
-        .recording-indicator {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 8px;
-            height: 8px;
-            background: red;
-            border-radius: 50%;
-            display: none;
-            animation: blink 1s infinite;
-        }
 
-        @keyframes blink {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.3;
-            }
-        }
 
         select.nav-select {
             background: rgba(255, 255, 255, 0.05);
@@ -529,10 +509,7 @@
                     <option value="GBP">GBP (£)</option>
                 </select>
 
-                <button class="icon-btn" onclick="playAudio()" title="Play Briefing">📢</button>
-                <button class="icon-btn" onclick="toggleVoice()" id="mic-btn" title="Voice Command">
-                    🎙️ <div class="recording-indicator"></div>
-                </button>
+
                 <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">🌗</button>
                 <button class="icon-btn" onclick="toggleSidebar()" title="AI Analyst">🤖</button>
                 <button class="icon-btn" onclick="exportCSV()" title="Export CSV">📥</button>
@@ -937,25 +914,7 @@
             document.getElementById('heatmap-view').classList.toggle('view-hidden', v === 'grid');
         }
 
-        // --- Voice Control ---
-        function toggleVoice() {
-            if (!('webkitSpeechRecognition' in window)) return alert('Voice not supported in this browser');
-            const recognition = new webkitSpeechRecognition();
-            recognition.continuous = false;
-            recognition.lang = 'en-US';
 
-            document.querySelector('.recording-indicator').style.display = 'block';
-            recognition.start();
-
-            recognition.onresult = (e) => {
-                const cmd = e.results[0][0].transcript.toLowerCase();
-                showToast(`Heard: "${cmd}"`);
-                if (cmd.includes('tech') || cmd.includes('nividia')) openChart('NVDA');
-                if (cmd.includes('bitcoin')) openChart('BTC');
-
-            };
-            recognition.onend = () => document.querySelector('.recording-indicator').style.display = 'none';
-        }
         // --- Export CSV ---
         function exportCSV() {
             const headers = ["ID,Name,Type,Sector,Price,Change%"];
@@ -975,10 +934,7 @@
             showToast("Market Data Exported", "info");
         }
 
-        function playAudio() {
-            const txt = "Market Pulse Briefing. Sentiment is " + document.getElementById('sentiment-text').innerText + ". Top headline: " + document.querySelector('.headline').innerText;
-            speechSynthesis.speak(new SpeechSynthesisUtterance(txt));
-        }
+
 
         // --- PWA ---
         function initPWA() {
