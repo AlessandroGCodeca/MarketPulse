@@ -15,7 +15,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
         rel="stylesheet">
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         :root {
             /* Dark Mode (Default) */
@@ -762,20 +762,11 @@
             <div class="chart-header">
                 <div>
                     <h2 id="chart-title" style="font-family:var(--font-serif)">Asset Chart</h2>
-                    <div class="chart-controls" style="margin-top:10px">
-
-                        <select id="chart-compare" class="nav-select" onchange="compareAsset(this.value)">
-                            <option value="">Compare...</option>
-                            <option value="BTC">vs Bitcoin</option>
-                            <option value="GOLD">vs Gold</option>
-                            <option value="SPY">vs S&P 500</option>
-                        </select>
-                    </div>
                 </div>
                 <button onclick="closeChart()"
                     style="background:none;border:none;color:inherit;font-size:20px;cursor:pointer">✕</button>
             </div>
-            <div id="tv-chart" style="flex:1; width:100%"></div>
+            <div id="tv-chart" style="flex:1; width:100%; height:100%"></div>
         </div>
     </div>
 
@@ -1291,8 +1282,21 @@
             ).join('');
         }
 
-        // --- Pro Charts V2 (Technicals & Trading) ---
-        let chart, candlestickSeries, smaSeries;
+        // --- TradingView Chart V3 ---
+        function getTVSymbol(name, id, type) {
+            // Heuristics for TradingView Symbols
+            if (type === 'crypto') return `BINANCE:${id}USDT`;
+            if (type === 'forex') return `FX:${id}`;
+            if (type === 'commodity') {
+                if (id === 'GOLD') return 'OANDA:XAUUSD';
+                if (id === 'SILVER') return 'OANDA:XAGUSD';
+                if (id === 'OIL') return 'TVC:USOIL';
+                return `TVC:${id}`; // Fallback
+            }
+            // Stocks - Try NASDAQ/NYSE
+            const nyse = ['JPM', 'V', 'MA', 'BAC', 'GS', 'MS', 'C', 'WFC', 'WMT', 'KO', 'MCD', 'NKE', 'HD', 'LOW', 'DIS', 'XOM', 'CVX', 'BA', 'GE', 'CAT', 'LMT', 'RTX', 'DE'];
+            return nyse.includes(id) ? `NYSE:${id}` : `NASDAQ:${id}`;
+        }
 
         function openChart(id) {
             currentAssetId = id;
@@ -1300,45 +1304,24 @@
             document.getElementById('chart-modal').style.display = 'flex';
             document.getElementById('chart-title').innerText = `${asset.name} (${asset.id})`;
 
-            // Populate Comparison Dropdown
-            const compSelect = document.getElementById('chart-compare');
-            compSelect.innerHTML = `<option value="">Compare...</option>` +
-                assets.filter(a => a.id !== id).map(a => `<option value="${a.id}">vs ${a.name}</option>`).join('');
-
-            if (chart) chart.remove();
-
-            const cont = document.getElementById('tv-chart');
-            chart = LightweightCharts.createChart(cont, {
-                layout: { background: { color: '#050511' }, textColor: '#d1d5db' },
-                grid: { vertLines: { color: '#333' }, horzLines: { color: '#333' } },
-                width: cont.clientWidth, height: cont.clientHeight
-            });
-
-            candlestickSeries = chart.addCandlestickSeries({ upColor: '#22c55e', downColor: '#ef4444' });
-            smaSeries = chart.addLineSeries({ color: 'rgba(59, 130, 246, 0.8)', lineWidth: 2, title: 'SMA 20' });
-
-            // Generate Candle Data
-            let time = Math.floor(Date.now() / 1000) - (asset.history.length * 86400);
-            const data = asset.history.map(p => {
-                time += 86400;
-                const v = p * 0.02;
-                return { time, open: p - v, high: p + v * 2, low: p - v * 2, close: p + v };
-            });
-            candlestickSeries.setData(data);
-
-            // Generate SMA Data
-            const smaData = calculateSMA(data, 20);
-            smaSeries.setData(smaData);
-        }
-
-        function calculateSMA(data, count) {
-            const avg = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
-            const result = [];
-            for (let i = count - 1; i < data.length; i++) {
-                const val = avg(data.slice(i - count + 1, i + 1).map(d => d.close));
-                result.push({ time: data[i].time, value: val });
+            // Initialize TradingView Widget
+            if (document.getElementById('tv-chart')) {
+                document.getElementById('tv-chart').innerHTML = ''; // Clear previous
+                new TradingView.widget({
+                    "autosize": true,
+                    "symbol": getTVSymbol(asset.name, asset.id, asset.type),
+                    "interval": "D",
+                    "timezone": "Etc/UTC",
+                    "theme": "dark",
+                    "style": "1",
+                    "locale": "en",
+                    "toolbar_bg": "#f1f3f6",
+                    "enable_publishing": false,
+                    "allow_symbol_change": true,
+                    "container_id": "tv-chart",
+                    "hide_side_toolbar": false
+                });
             }
-            return result;
         }
 
         function closeChart() { document.getElementById('chart-modal').style.display = 'none'; currentAssetId = null; }
