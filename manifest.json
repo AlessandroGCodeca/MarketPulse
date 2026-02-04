@@ -1,0 +1,16 @@
+{
+    "name": "Market Pulse Pro",
+    "short_name": "MarketPulse",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#050511",
+    "theme_color": "#050511",
+    "orientation": "any",
+    "icons": [
+        {
+            "src": "app_icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

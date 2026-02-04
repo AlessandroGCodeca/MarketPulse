@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Pulse 5.0: Ultimate</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="app_icon.png">
+    <meta name="theme-color" content="#050511">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        :root {
+            /* Dark Mode (Default) */
+            --bg-dark: #050511;
+            --card-glass: rgba(22, 27, 34, 0.6);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --header-bg: rgba(5, 5, 17, 0.7);
+
+            --bullish: #22c55e;
+            --bearish: #ef4444;
+            --neutral: #eab308;
+            --font-serif: 'Playfair Display', serif;
+            --font-sans: 'Inter', sans-serif;
+
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.5);
+            --toast-bg: #1e293b;
+            --sidebar-width: 300px;
+        }
+
+        [data-theme="light"] {
+            --bg-dark: #f8f9fa;
+            --card-glass: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(0, 0, 0, 0.08);
+            --text-primary: #1a1a1a;
+            --text-secondary: #5f6368;
+            --accent-blue: #0056b3;
+            --header-bg: rgba(255, 255, 255, 0.9);
+            --toast-bg: #ffffff;
+            --bullish: #166534;
+            --bearish: #b91c1c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Layout */
+        .app-container {
+            transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-open .app-container {
+            margin-right: var(--sidebar-width);
+        }
+
+        /* Aura BG */
+        .ambient-light {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
+            z-index: -1;
+            pointer-events: none;
+            animation: pulse-bg 10s infinite alternate;
+        }
+
+        @keyframes pulse-bg {
+            0% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 0.8;
+            }
+        }
+
+        /* Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--card-border);
+            background: var(--header-bg);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area h1 {
+            font-family: var(--font-serif);
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .logo-area span {
+            font-size: 11px;
+            opacity: 0.7;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 5px;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        .icon-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .icon-btn.active {
+            color: var(--accent-blue);
+        }
+
+        .recording-indicator {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 8px;
+            height: 8px;
+            background: red;
+            border-radius: 50%;
+            display: none;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        select.nav-select {
+            background: rgba(255, 255, 255, 0.05);
+            color: inherit;
+            border: 1px solid var(--card-border);
+            padding: 5px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Ticker */
+        .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid var(--card-border);
+            height: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        .ticker {
+            display: flex;
+            white-space: nowrap;
+            animation: ticker 60s linear infinite;
+        }
+
+        .ticker:hover {
+            animation-play-state: paused;
+        }
+
+        .ticker-item {
+            margin-right: 30px;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .ticker-item:hover {
+            color: var(--text-primary);
+        }
+
+        @keyframes ticker {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* Main Content */
+        main {
+            padding: 30px 5%;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Sidebar (AI Analyst) */
+        .analyst-sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--bg-dark);
+            border-left: 1px solid var(--card-border);
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 200;
+            padding: 25px;
+            overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .sidebar-open .analyst-sidebar {
+            transform: translateX(0);
+        }
+
+        .sidebar-header {
+            font-family: var(--font-serif);
+            font-size: 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sentiment-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .gauge-val {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .analysis-point {
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            border-left: 2px solid var(--accent-blue);
+            padding-left: 10px;
+        }
+
+        /* Chart Modal */
+        .chart-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .chart-content {
+            width: 90%;
+            height: 85%;
+            background: var(--bg-dark);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .trade-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            color: white;
+            transition: transform 0.1s;
+        }
+
+        .trade-btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-buy {
+            background: var(--bullish);
+        }
+
+        .btn-sell {
+            background: var(--bearish);
+        }
+
+        /* Portfolio Modal */
+        .portfolio-modal {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            width: 300px;
+            background: var(--bg-dark);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            z-index: 500;
+            display: none;
+        }
+
+        /* Word Cloud & Heatmap */
+        .cloud-tag {
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+            display: inline-block;
+            margin: 4px;
+        }
+
+        .cloud-tag:hover {
+            color: var(--accent-blue);
+            transform: scale(1.1);
+        }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            height: 400px;
+        }
+
+        .heatmap-cell {
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.02);
+            z-index: 2;
+        }
+
+        .view-hidden {
+            display: none !important;
+        }
+
+        .masonry-grid {
+            column-count: 3;
+            column-gap: 20px;
+        }
+
+        @media (max-width: 1000px) {
+            .masonry-grid {
+                column-count: 2;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .masonry-grid {
+                column-count: 1;
+            }
+        }
+
+        .article-card {
+            background: var(--card-glass);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            break-inside: avoid;
+            transition: transform 0.2s;
+        }
+
+        .article-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent-blue);
+        }
+
+        .headline {
+            font-family: var(--font-serif);
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--toast-bg);
+            padding: 15px 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--accent-blue);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transform: translateX(100%);
+            transition: transform 0.3s;
+            max-width: 300px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid var(--card-border);
+            pointer-events: auto;
+        }
+
+        .sparkline {
+            width: 40px;
+            height: 20px;
+            stroke-width: 2;
+            fill: none;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ambient-light"></div>
+
+    <div class="analyst-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span data-i18n="analyst">AI Market Analyst</span>
+            <button onclick="toggleSidebar()"
+                style="background:none;border:none;color:inherit;cursor:pointer">✕</button>
+        </div>
+        <div class="sentiment-card">
+            <div style="font-size:12px;text-transform:uppercase;opacity:0.7" data-i18n="fearGreed">Fear & Greed Index
+            </div>
+            <div id="sentiment-val" class="gauge-val" style="color:var(--neutral)">50</div>
+            <div id="sentiment-text" style="font-size:14px">Neutral</div>
+        </div>
+        <div style="margin-bottom:20px; font-weight:600; font-size:14px" data-i18n="insights">Market Insights</div>
+        <div id="analyst-insights"></div>
+    </div>
+
+
+
+    <div class="app-container">
+        <div class="ticker-wrap">
+            <div class="ticker" id="ticker"></div>
+            <div class="ticker" id="ticker-2" aria-hidden="true"></div>
+        </div>
+
+        <header>
+            <div class="logo-area">
+                <h1 data-i18n="title">Market Pulse</h1>
+                <span data-i18n="subtitle">Ultimate Logic</span>
+            </div>
+            <div class="header-controls">
+
+                <select id="currency" class="nav-select" onchange="updateCurrency(this.value)">
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                </select>
+
+                <button class="icon-btn" onclick="playAudio()" title="Play Briefing">📢</button>
+                <button class="icon-btn" onclick="toggleVoice()" id="mic-btn" title="Voice Command">
+                    🎙️ <div class="recording-indicator"></div>
+                </button>
+                <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">🌗</button>
+                <button class="icon-btn" onclick="toggleSidebar()" title="AI Analyst">🤖</button>
+                <button class="icon-btn" onclick="exportCSV()" title="Export CSV">📥</button>
+            </div>
+        </header>
+
+        <main>
+            <div id="word-cloud"
+                style="text-align:center; margin-bottom:30px; padding-bottom:20px; border-bottom:1px solid var(--card-border)">
+            </div>
+
+            <!-- Stock Screener & View Controls -->
+            <div
+                style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center; flex-wrap:wrap; gap:10px">
+                <div class="screener-controls">
+                    <span style="font-size:12px; opacity:0.7; margin-right:10px; font-weight:600"
+                        data-i18n="screener">SCREENER:</span>
+                    <button class="filter-chip active" onclick="applyScreener('all')">All</button>
+                    <button class="filter-chip" onclick="applyScreener('gainers')">Top Gainers</button>
+                    <button class="filter-chip" onclick="applyScreener('crypto')">Crypto</button>
+                    <button class="filter-chip" onclick="applyScreener('tech')">Tech Only</button>
+                </div>
+                <div>
+                    <button class="icon-btn active" onclick="setView('grid')" data-i18n="grid">Grid</button>
+                    <button class="icon-btn" onclick="setView('heatmap')" data-i18n="heatmap">Heatmap</button>
+                </div>
+            </div>
+
+            <div id="grid-view" class="masonry-grid"></div>
+            <div id="heatmap-view" class="heatmap-grid view-hidden"></div>
+        </main>
+    </div>
+
+    <!-- Updated Styles -->
+    <style>
+        .filter-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 5px;
+        }
+
+        .filter-chip:hover,
+        .filter-chip.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        .calendar-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 13px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .cal-date {
+            opacity: 0.6;
+            font-size: 11px;
+        }
+
+        .cal-impact {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+    </style>
+
+    <!-- Chart Modal -->
+    <div class="chart-modal" id="chart-modal" onclick="if(event.target===this) closeChart()">
+        <div class="chart-content">
+            <div class="chart-header">
+                <div>
+                    <h2 id="chart-title" style="font-family:var(--font-serif)">Asset Chart</h2>
+                    <div class="chart-controls" style="margin-top:10px">
+
+                        <select id="chart-compare" class="nav-select" onchange="compareAsset(this.value)">
+                            <option value="">Compare...</option>
+                            <option value="BTC">vs Bitcoin</option>
+                            <option value="GOLD">vs Gold</option>
+                            <option value="SPY">vs S&P 500</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="closeChart()"
+                    style="background:none;border:none;color:inherit;font-size:20px;cursor:pointer">✕</button>
+            </div>
+            <div id="tv-chart" style="flex:1; width:100%"></div>
+        </div>
+    </div>
+
+    <!-- Toasts -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="data.js"></script>
+    <script>
+        let currentLang = 'en';
+
+        // --- State ---
+        let currentCurrency = 'USD';
+        let currentAssetId = null;
+        const rates = { 'USD': 1, 'EUR': 0.92, 'GBP': 0.79 };
+        const syms = { 'USD': '$', 'EUR': '€', 'GBP': '£' };
+
+
+
+        const assets = [
+            { id: 'BTC', name: 'Bitcoin', price: 92340, type: 'crypto', sector: 'Crypto', history: [] },
+            { id: 'ETH', name: 'Ethereum', price: 3450, type: 'crypto', sector: 'Crypto', history: [] },
+            { id: 'NVDA', name: 'Nvidia', price: 179.90, type: 'stock', sector: 'Tech', history: [] },
+            { id: 'AAPL', name: 'Apple', price: 269.50, type: 'stock', sector: 'Tech', history: [] },
+            { id: 'GOLD', name: 'Gold', price: 2450, type: 'commodity', sector: 'Commodities', history: [] },
+            { id: 'OIL', name: 'Crude Oil', price: 75.20, type: 'commodity', sector: 'Commodities', history: [] }
+        ];
+
+        // Fill Data History
+        assets.forEach(a => {
+            let p = a.price;
+            for (let i = 0; i < 100; i++) {
+                p = p * (1 + (Math.random() - 0.5) * 0.02);
+                a.history.push(p);
+            }
+        });
+
+        // --- Init ---
+        function init() {
+            renderTicker();
+            renderGrid();
+            renderHeatmap();
+            renderCloud();
+            initPWA();
+            analyzeSentiment();
+            updateCalendar(); // New Calendar Widget
+            setInterval(simulateMarket, 1000);
+        }
+
+
+
+        // --- Renderers ---
+        function renderTicker() {
+            const html = assets.map(a => {
+                const hist = a.history.slice(-10);
+                const color = hist[9] > hist[0] ? 'var(--bullish)' : 'var(--bearish)';
+                const points = hist.map((v, i) => `${(i / 9) * 40},${20 - ((v - Math.min(...hist)) / (Math.max(...hist) - Math.min(...hist))) * 20}`).join(' ');
+
+                return `
+                <div class="ticker-item" onclick="openChart('${a.id}')">
+                    <span>${a.id}</span>
+                    <svg class="sparkline" style="stroke:${color}"><polyline points="${points}"/></svg>
+                    <span>${formatPrice(a.price)}</span>
+                </div>`;
+            }).join('');
+            document.getElementById('ticker').innerHTML = html;
+            document.getElementById('ticker-2').innerHTML = html;
+        }
+
+        // --- Economic Calendar ---
+        function updateCalendar() {
+            const events = [
+                { time: '14:30', event: 'US Non-Farm Payrolls', impact: 'high' },
+                { time: '15:00', event: 'ISM Manufacturing PMI', impact: 'medium' },
+                { time: '16:00', event: 'Fed Chair Speech', impact: 'high' },
+                { time: 'Tomorrow', event: 'ECB Rate Decision', impact: 'high' }
+            ];
+
+            const html = `
+                <div style="margin:20px 0; border-top:1px solid var(--card-border); padding-top:20px">
+                    <div style="font-weight:600; font-size:14px; margin-bottom:15px; display:flex; justify-content:space-between">
+                        <span data-i18n="calendar">Economic Calendar</span>
+                        <span style="opacity:0.5; font-size:11px">GMT-4</span>
+                    </div>
+                    ${events.map(e => `
+                        <div class="calendar-item">
+                            <div>
+                                <div style="font-weight:500">${e.event}</div>
+                                <div class="cal-date">${e.time}</div>
+                            </div>
+                            <div title="${e.impact} impact">
+                                <span class="cal-impact" style="background:${e.impact === 'high' ? 'var(--bearish)' : (e.impact === 'medium' ? 'var(--neutral)' : 'var(--bullish)')}"></span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            // Append to sidebar if not exists, else update
+            const existing = document.getElementById('eco-calendar');
+            if (existing) existing.innerHTML = html;
+            else {
+                const div = document.createElement('div');
+                div.id = 'eco-calendar';
+                div.innerHTML = html;
+                document.getElementById('analyst-insights').after(div);
+            }
+        }
+
+        // --- Stock Screener ---
+        let activeFilter = 'all';
+
+        function applyScreener(filter) {
+            activeFilter = filter;
+
+            // innovative UI feedback: scroll to top of view
+            const view = document.querySelector('main');
+            if (view) view.scrollIntoView({ behavior: 'smooth' });
+
+            // Update UI Interface
+            document.querySelectorAll('.filter-chip').forEach(btn => {
+                if (btn.innerText.toLowerCase().includes(filter.replace('gainers', 'gain').replace('tech', 'tech').replace('crypto', 'crypto'))) {
+                    btn.classList.add('active');
+                } else if (filter === 'all' && btn.innerText === 'All') {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Re-render active views
+            renderGrid();
+            renderHeatmap();
+        }
+
+        // --- Renderers Updated for Screener ---
+        function renderGrid() {
+            const grid = document.getElementById('grid-view');
+            let allArticles = (typeof marketData !== 'undefined' ? marketData : []).flatMap(s => s.articles);
+
+            // Filter Logic
+            if (activeFilter !== 'all') {
+                allArticles = allArticles.filter(a => {
+                    const txt = (a.headline + a.snippet).toLowerCase();
+                    if (activeFilter === 'tech') return txt.match(/tech|ai|chip|apple|nvidia|amd|microsoft|google/);
+                    if (activeFilter === 'crypto') return txt.match(/crypto|bitcoin|coin|token|block/);
+                    if (activeFilter === 'gainers') return txt.match(/surge|jump|record|soar|rally/);
+                    return true;
+                });
+            }
+
+            grid.innerHTML = allArticles.length ? allArticles.map(a => `
+                <div class="article-card">
+                    <div style="font-size:10px;opacity:0.6;margin-bottom:5px;text-transform:uppercase">${a.source || 'News'}</div>
+                    <div class="headline">${a.headline}</div>
+                    <div style="font-size:13px;opacity:0.8">${a.snippet}</div>
+                </div>
+            `).join('') : '<div style="grid-column:1/-1;text-align:center;padding:40px;opacity:0.5">No news matches this filter.</div>';
+        }
+
+        function renderHeatmap() {
+            const sectors = {};
+            // Filter Assets
+            const filteredAssets = assets.filter(a => {
+                if (activeFilter === 'all') return true;
+                if (activeFilter === 'tech') return a.sector === 'Tech';
+                if (activeFilter === 'crypto') return a.type === 'crypto';
+                if (activeFilter === 'gainers') {
+                    const chg = (a.price - a.history[0]) / a.history[0];
+                    return chg > 0;
+                }
+                return true;
+            });
+
+            filteredAssets.forEach(a => {
+                if (!sectors[a.sector]) sectors[a.sector] = [];
+                sectors[a.sector].push(a);
+            });
+
+            document.getElementById('heatmap-view').innerHTML = Object.keys(sectors).length ? Object.keys(sectors).map(s => {
+                const items = sectors[s];
+                const change = items.reduce((acc, i) => acc + (i.price - i.history[0]) / i.history[0], 0) / items.length;
+                const hue = change >= 0 ? 142 : 0;
+                return `<div class="heatmap-cell" style="background:hsl(${hue}, ${Math.min(Math.abs(change) * 5000, 80)}%, 30%)">
+                    <div style="font-size:18px;font-weight:bold">${s}</div>
+                    <div>${(change * 100).toFixed(2)}%</div>
+                    <div style="font-size:11px;opacity:0.7;margin-top:5px">${items.length} Assets</div>
+                </div>`;
+            }).join('') : '<div style="grid-column:1/-1;text-align:center;padding:40px;opacity:0.5">No assets match this filter.</div>';
+        }
+        function renderCloud() {
+            const words = ['Market', 'Rate', 'Growth', 'AI', 'Crypto', 'Stocks', 'Fed', 'Inflation', 'Tech', 'Oil', 'China', 'Earnings'];
+            document.getElementById('word-cloud').innerHTML = words.map(w =>
+                `<span class="cloud-tag" style="font-size:${12 + Math.random() * 20}px;opacity:${0.5 + Math.random() * 0.5}">${w}</span>`
+            ).join('');
+        }
+
+        // --- Pro Charts V2 (Technicals & Trading) ---
+        let chart, candlestickSeries, smaSeries;
+
+        function openChart(id) {
+            currentAssetId = id;
+            const asset = assets.find(a => a.id === id);
+            document.getElementById('chart-modal').style.display = 'flex';
+            document.getElementById('chart-title').innerText = `${asset.name} (${asset.id})`;
+
+            if (chart) chart.remove();
+
+            const cont = document.getElementById('tv-chart');
+            chart = LightweightCharts.createChart(cont, {
+                layout: { background: { color: '#050511' }, textColor: '#d1d5db' },
+                grid: { vertLines: { color: '#333' }, horzLines: { color: '#333' } },
+                width: cont.clientWidth, height: cont.clientHeight
+            });
+
+            candlestickSeries = chart.addCandlestickSeries({ upColor: '#22c55e', downColor: '#ef4444' });
+            smaSeries = chart.addLineSeries({ color: 'rgba(59, 130, 246, 0.8)', lineWidth: 2, title: 'SMA 20' });
+
+            // Generate Candle Data
+            let time = Math.floor(Date.now() / 1000) - (asset.history.length * 86400);
+            const data = asset.history.map(p => {
+                time += 86400;
+                const v = p * 0.02;
+                return { time, open: p - v, high: p + v * 2, low: p - v * 2, close: p + v };
+            });
+            candlestickSeries.setData(data);
+
+            // Generate SMA Data
+            const smaData = calculateSMA(data, 20);
+            smaSeries.setData(smaData);
+        }
+
+        function calculateSMA(data, count) {
+            const avg = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
+            const result = [];
+            for (let i = count - 1; i < data.length; i++) {
+                const val = avg(data.slice(i - count + 1, i + 1).map(d => d.close));
+                result.push({ time: data[i].time, value: val });
+            }
+            return result;
+        }
+
+        function closeChart() { document.getElementById('chart-modal').style.display = 'none'; currentAssetId = null; }
+
+        // --- Comparision Logic ---
+        function compareAsset(compareId) {
+            if (!compareId || !chart) return;
+            const compareSeries = chart.addLineSeries({ color: '#fbbf24', lineWidth: 2, title: compareId });
+            let time = Math.floor(Date.now() / 1000) - (100 * 86400);
+            const mockHistory = [];
+            let p = 100;
+            for (let i = 0; i < 100; i++) {
+                time += 86400;
+                p = p * (1 + (Math.random() - 0.5) * 0.03);
+                mockHistory.push({ time, value: p });
+            }
+            compareSeries.setData(mockHistory);
+            chart.timeScale().fitContent();
+        }
+
+        // --- AI Analyst ---
+        function analyzeSentiment() {
+            const headlines = (typeof marketData !== 'undefined' ? marketData : []).flatMap(s => s.articles.map(a => a.headline)).join(' ');
+            const pos = (headlines.match(/surge|record|jump|growth|high|bull/gi) || []).length;
+            const neg = (headlines.match(/drop|crash|fear|inflation|crisis|bear/gi) || []).length;
+            const score = 50 + (pos - neg) * 5;
+            const val = Math.max(0, Math.min(100, score));
+
+            const el = document.getElementById('sentiment-val');
+            el.innerText = val;
+            el.style.color = val > 60 ? 'var(--bullish)' : (val < 40 ? 'var(--bearish)' : 'var(--neutral)');
+            document.getElementById('sentiment-text').innerText = val > 60 ? "Greed" : (val < 40 ? "Fear" : "Neutral");
+
+            document.getElementById('analyst-insights').innerHTML = `
+                <div class="analysis-point">Market sentiment is leaning <b>${val > 50 ? 'Bullish' : 'Bearish'}</b> driven by ${pos > neg ? 'growth narratives' : 'risk factors'}.</div>
+            `;
+        }
+        function toggleSidebar() { document.body.classList.toggle('sidebar-open'); }
+
+        // --- Simulation ---
+        function simulateMarket() {
+            assets.forEach(a => {
+                const change = (Math.random() - 0.5) * (a.price * 0.005);
+                a.price += change;
+                a.history.push(a.price);
+                a.history.shift();
+            });
+            renderTicker();
+            updateCurrency(currentCurrency);
+        }
+
+        // --- Helpers ---
+        function formatPrice(p) { return syms[currentCurrency] + (p * rates[currentCurrency]).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function updateCurrency(c) { currentCurrency = c; renderTicker(); }
+        function toggleTheme() { document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; }
+        function showToast(msg, type = 'info') {
+            const t = document.createElement('div'); t.className = 'toast';
+            const icon = type === 'up' ? '📈' : (type === 'down' ? '📉' : '🔔');
+            t.innerHTML = `${icon} ${msg}`;
+            const c = document.getElementById('toast-container'); c.appendChild(t);
+            setTimeout(() => t.style.transform = 'translateX(0)', 10);
+            setTimeout(() => { t.style.transform = 'translateX(100%)'; setTimeout(() => t.remove(), 300); }, 5000);
+        }
+        function setView(v) {
+            document.getElementById('grid-view').classList.toggle('view-hidden', v !== 'grid');
+            document.getElementById('heatmap-view').classList.toggle('view-hidden', v === 'grid');
+        }
+
+        // --- Voice Control ---
+        function toggleVoice() {
+            if (!('webkitSpeechRecognition' in window)) return alert('Voice not supported in this browser');
+            const recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+
+            document.querySelector('.recording-indicator').style.display = 'block';
+            recognition.start();
+
+            recognition.onresult = (e) => {
+                const cmd = e.results[0][0].transcript.toLowerCase();
+                showToast(`Heard: "${cmd}"`);
+                if (cmd.includes('tech') || cmd.includes('nividia')) openChart('NVDA');
+                if (cmd.includes('bitcoin')) openChart('BTC');
+
+            };
+            recognition.onend = () => document.querySelector('.recording-indicator').style.display = 'none';
+        }
+        // --- Export CSV ---
+        function exportCSV() {
+            const headers = ["ID,Name,Type,Sector,Price,Change%"];
+            const rows = assets.map(a => {
+                const change = ((a.price - a.history[0]) / a.history[0] * 100).toFixed(2);
+                return `${a.id},${a.name},${a.type},${a.sector},${a.price.toFixed(2)},${change}%`;
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + headers.concat(rows).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `market_pulse_data_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("Market Data Exported", "info");
+        }
+
+        function playAudio() {
+            const txt = "Market Pulse Briefing. Sentiment is " + document.getElementById('sentiment-text').innerText + ". Top headline: " + document.querySelector('.headline').innerText;
+            speechSynthesis.speak(new SpeechSynthesisUtterance(txt));
+        }
+
+        // --- PWA ---
+        function initPWA() {
+            if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js');
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
