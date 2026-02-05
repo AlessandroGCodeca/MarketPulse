@@ -44,15 +44,97 @@
 
         [data-theme="light"] {
             --bg-dark: #f8f9fa;
-            --card-glass: rgba(255, 255, 255, 0.85);
-            --card-border: rgba(0, 0, 0, 0.08);
+            --card-glass: rgba(255, 255, 255, 0.9);
+            --card-border: rgba(0, 0, 0, 0.12);
             --text-primary: #1a1a1a;
             --text-secondary: #5f6368;
-            --accent-blue: #0056b3;
-            --header-bg: rgba(255, 255, 255, 0.9);
+            --accent-blue: #2563eb;
+            --header-bg: rgba(255, 255, 255, 0.95);
             --toast-bg: #ffffff;
-            --bullish: #166534;
-            --bearish: #b91c1c;
+            --bullish: #16a34a;
+            --bearish: #dc2626;
+            --neutral: #ca8a04;
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --bullish-glow: rgba(22, 163, 74, 0.25);
+            --bearish-glow: rgba(220, 38, 38, 0.25);
+        }
+
+        /* Light mode ambient background */
+        [data-theme="light"] .ambient-light {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 50%, #f5f0ff 100%);
+        }
+
+        [data-theme="light"] .aurora-blob {
+            opacity: 0.15;
+        }
+
+        [data-theme="light"] .blob-1 {
+            background: #93c5fd;
+        }
+
+        [data-theme="light"] .blob-2 {
+            background: #c4b5fd;
+        }
+
+        [data-theme="light"] .blob-3 {
+            background: #86efac;
+        }
+
+        /* Light mode article cards */
+        [data-theme="light"] .article-card {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        [data-theme="light"] .article-card:hover {
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12);
+        }
+
+        /* Light mode sentiment card */
+        [data-theme="light"] .sentiment-card {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        /* Light mode sidebar */
+        [data-theme="light"] .analyst-sidebar {
+            background: #ffffff;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Light mode heatmap cells */
+        [data-theme="light"] .heatmap-cell {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Light mode filter chips */
+        [data-theme="light"] .filter-chip {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        /* Light mode ticker */
+        [data-theme="light"] .ticker-wrap {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        /* Light mode skeleton loading */
+        [data-theme="light"] .skeleton {
+            background: linear-gradient(90deg,
+                    rgba(37, 99, 235, 0.08) 0%,
+                    rgba(124, 58, 237, 0.12) 25%,
+                    rgba(236, 72, 153, 0.1) 50%,
+                    rgba(124, 58, 237, 0.12) 75%,
+                    rgba(37, 99, 235, 0.08) 100%);
+        }
+
+        /* Light mode search input */
+        [data-theme="light"] #search-input {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        /* Light mode nav select */
+        [data-theme="light"] select.nav-select {
+            background: rgba(0, 0, 0, 0.04);
         }
 
         * {
@@ -588,22 +670,444 @@
             pointer-events: auto;
         }
 
+        /* =============================================
+           MOBILE RESPONSIVE STYLES
+           ============================================= */
+
+        /* Tablet (768px and below) */
         @media (max-width: 768px) {
-            .mobile-nav {
-                display: flex;
+
+            /* Header adjustments */
+            header {
+                padding: 12px 4%;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .logo-area h1 {
+                font-size: 20px;
+            }
+
+            .logo-area span {
+                font-size: 10px;
+            }
+
+            #market-clocks {
+                display: none !important;
+            }
+
+            .header-controls {
+                gap: 6px;
             }
 
             .header-controls .icon-btn {
-                display: none;
+                padding: 8px;
+                font-size: 16px;
             }
 
-            /* Hide desktop icons */
             .header-controls .nav-select {
-                display: none;
+                padding: 4px 6px;
+                font-size: 11px;
             }
 
+            /* Sidebar */
             .analyst-sidebar {
                 width: 100%;
+                padding: 20px 15px;
+            }
+
+            /* Main content */
+            main {
+                padding: 20px 4%;
+            }
+
+            /* Market status bar */
+            #market-status-bar {
+                gap: 10px !important;
+                padding: 10px !important;
+                font-size: 10px !important;
+            }
+
+            /* Word cloud */
+            #word-cloud {
+                padding-bottom: 15px;
+                margin-bottom: 20px;
+            }
+
+            /* Screener controls - horizontal scroll */
+            .screener-controls {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding-bottom: 5px;
+            }
+
+            .screener-controls::-webkit-scrollbar {
+                display: none;
+            }
+
+            #search-input {
+                width: 140px !important;
+                font-size: 11px !important;
+            }
+
+            .filter-chip {
+                padding: 6px 10px;
+                font-size: 11px;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+
+            /* Article cards */
+            .article-card {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .headline {
+                font-size: 15px;
+            }
+
+            /* Heatmap cells */
+            .heatmap-cell {
+                padding: 15px 10px;
+                font-size: 12px;
+            }
+
+            .heatmap-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            /* Toast notifications */
+            .toast-container {
+                bottom: 70px;
+                right: 10px;
+                left: 10px;
+            }
+
+            .toast {
+                max-width: 100%;
+                font-size: 12px;
+                padding: 12px 15px;
+            }
+
+            /* Chart modal */
+            .chart-content {
+                width: 95%;
+                height: 90%;
+                padding: 15px;
+                border-radius: 8px;
+            }
+
+            /* News modal */
+            #news-modal .chart-content {
+                padding: 25px 20px !important;
+                max-width: 95% !important;
+            }
+
+            #news-headline {
+                font-size: 18px !important;
+            }
+
+            #news-snippet {
+                font-size: 14px !important;
+            }
+
+            /* Footer */
+            footer {
+                padding: 15px !important;
+                font-size: 11px !important;
+            }
+        }
+
+        /* Mobile phones (480px and below) */
+        @media (max-width: 480px) {
+
+            /* Header stacking */
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 10px 4%;
+            }
+
+            .logo-area {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+
+            .logo-area h1 {
+                font-size: 18px;
+            }
+
+            .header-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            /* Show only essential controls */
+            .header-controls .nav-select {
+                display: block;
+                flex: 1;
+                max-width: 80px;
+            }
+
+            .header-controls .icon-btn {
+                display: flex;
+                padding: 6px;
+                font-size: 14px;
+            }
+
+            /* Ticker */
+            .ticker-wrap {
+                height: 35px;
+            }
+
+            .ticker-item {
+                font-size: 11px;
+                margin-right: 20px;
+            }
+
+            /* Main content */
+            main {
+                padding: 15px 3%;
+            }
+
+            /* Screener controls */
+            .screener-controls>span:first-child {
+                display: none;
+            }
+
+            #search-input {
+                width: 120px !important;
+                padding: 5px 10px !important;
+            }
+
+            .filter-chip {
+                padding: 5px 8px;
+                font-size: 10px;
+                margin-right: 4px;
+            }
+
+            /* Word cloud reduced */
+            .cloud-tag {
+                font-size: 90% !important;
+            }
+
+            /* Article cards */
+            .article-card {
+                padding: 12px;
+                border-radius: 10px;
+            }
+
+            .headline {
+                font-size: 14px;
+                line-height: 1.4;
+            }
+
+            /* Heatmap */
+            .heatmap-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
+
+            .heatmap-cell {
+                padding: 12px 8px;
+                border-radius: 8px;
+            }
+
+            .heatmap-cell div:first-child {
+                font-size: 11px !important;
+            }
+
+            .heatmap-cell div:nth-child(2) {
+                font-size: 12px !important;
+            }
+
+            /* Sidebar */
+            .analyst-sidebar {
+                padding: 15px 12px;
+            }
+
+            .sidebar-header {
+                font-size: 16px;
+            }
+
+            .sentiment-card {
+                padding: 15px;
+            }
+
+            .gauge-val {
+                font-size: 26px;
+            }
+
+            .analysis-point {
+                font-size: 12px;
+            }
+
+            /* Modals fullscreen */
+            .chart-content {
+                width: 100%;
+                height: 100%;
+                border-radius: 0;
+            }
+
+            #news-modal .chart-content {
+                border-radius: 12px !important;
+            }
+
+            /* Toast */
+            .toast-container {
+                bottom: 60px;
+                left: 8px;
+                right: 8px;
+            }
+
+            .toast {
+                padding: 10px 12px;
+                font-size: 11px;
+            }
+        }
+
+        /* Very small phones (360px and below) */
+        @media (max-width: 360px) {
+            .logo-area h1 {
+                font-size: 16px;
+            }
+
+            .header-controls .icon-btn {
+                padding: 5px;
+                font-size: 12px;
+            }
+
+            .filter-chip {
+                padding: 4px 6px;
+                font-size: 9px;
+            }
+
+            #search-input {
+                width: 100px !important;
+            }
+
+            .headline {
+                font-size: 13px;
+            }
+
+            .heatmap-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Touch-friendly improvements */
+        @media (hover: none) and (pointer: coarse) {
+
+            /* Larger touch targets */
+            .icon-btn {
+                min-width: 44px;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .filter-chip {
+                min-height: 36px;
+                display: flex;
+                align-items: center;
+            }
+
+            .ticker-item {
+                padding: 8px 4px;
+            }
+
+            /* Disable hover effects on touch */
+            .article-card:hover {
+                transform: none;
+            }
+
+            .heatmap-cell:hover {
+                transform: none;
+            }
+
+            /* Active states instead */
+            .article-card:active {
+                transform: scale(0.98);
+            }
+
+            .heatmap-cell:active {
+                transform: scale(0.97);
+            }
+
+            .filter-chip:active {
+                transform: scale(0.95);
+            }
+        }
+
+        /* Safe area for notched phones */
+        @supports (padding: max(0px)) {
+            header {
+                padding-left: max(4%, env(safe-area-inset-left));
+                padding-right: max(4%, env(safe-area-inset-right));
+            }
+
+            main {
+                padding-left: max(4%, env(safe-area-inset-left));
+                padding-right: max(4%, env(safe-area-inset-right));
+            }
+
+            footer {
+                padding-bottom: max(15px, env(safe-area-inset-bottom));
+            }
+
+            .toast-container {
+                bottom: max(20px, calc(env(safe-area-inset-bottom) + 10px));
+            }
+        }
+
+        /* Landscape mode adjustments */
+        @media (max-height: 500px) and (orientation: landscape) {
+            header {
+                padding: 8px 4%;
+            }
+
+            .ticker-wrap {
+                height: 30px;
+            }
+
+            main {
+                padding: 10px 4%;
+            }
+
+            .chart-content {
+                height: 95%;
+            }
+        }
+
+        /* Reduced motion for accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            .ticker {
+                animation: none;
+            }
+
+            .aurora-blob {
+                animation: none;
+            }
+
+            .article-card,
+            .heatmap-cell,
+            .filter-chip {
+                transition: none;
+            }
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --card-border: rgba(255, 255, 255, 0.3);
+            }
+
+            [data-theme="light"] {
+                --card-border: rgba(0, 0, 0, 0.3);
             }
         }
 
@@ -893,11 +1397,12 @@
         #ticker-tooltip {
             position: fixed;
             z-index: 10000;
-            background: rgba(20, 20, 30, 0.95);
+            background: var(--toast-bg);
             backdrop-filter: blur(10px);
             border: 1px solid var(--card-border);
             padding: 10px;
             border-radius: 8px;
+            box-shadow: var(--shadow-soft);
             font-size: 12px;
             pointer-events: none;
             display: none;
@@ -965,25 +1470,16 @@
             font-size: 18px;
         }
 
+        /* Mobile nav visibility - complements main responsive styles */
         @media (max-width: 768px) {
             .mobile-nav {
                 display: flex;
             }
 
-            .header-controls .icon-btn {
-                display: none;
+            /* Add padding for fixed mobile nav */
+            body {
+                padding-bottom: 70px;
             }
-
-            /* Hide desktop icons */
-            .header-controls .nav-select {
-                display: none;
-            }
-
-            .analyst-sidebar {
-                width: 100%;
-            }
-
-            /* Full width sidebar on mobile */
         }
     </style>
 
