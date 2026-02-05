@@ -997,6 +997,15 @@
             }
         };
 
+        // --- Init Ticker (CRITICAL: Must run first to populate asset history) ---
+        function initTicker() {
+            assets.forEach(a => {
+                if (!a.history || a.history.length === 0) {
+                    a.history = Array(20).fill(a.price);
+                }
+            });
+        }
+
         // --- Dynamic News Engine (Hybrid: RSS + Simulation) ---
         const RSSFetcher = {
             feeds: {
@@ -1279,6 +1288,7 @@
 
         // --- Init ---
         function init() {
+            initTicker(); // Initialize asset data FIRST
             renderTicker();
             renderGrid();
             renderHeatmap();
@@ -1290,6 +1300,7 @@
             setInterval(updateClocks, 1000);
             setInterval(cycleTitle, 3000); // New Dynamic Title
             updateClocks();
+            isLoading = false; // CRITICAL: Reveal the content after init
         }
 
         // --- Immersion Features ---
