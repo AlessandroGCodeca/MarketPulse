@@ -993,12 +993,53 @@
 
                 renderTicker();
                 renderHeatmap(); // Update heatmap values
-                isLoading = false;
                 if (currentAssetId) openChart(currentAssetId); // Live chart update
             }
         };
 
-        // --- Dynamic News Engine ---
+        // --- Dynamic News Engine (Hybrid: RSS + Simulation) ---
+        const RSSFetcher = {
+            feeds: {
+                "The Economist": "https://www.economist.com/finance-and-economics/rss.xml",
+                "Bloomberg": "https://feeds.bloomberg.com/markets/news.rss",
+                "Wall Street Journal": "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",
+                "Forbes": "https://www.forbes.com/investing/feed/",
+                "Marketwatch": "http://feeds.marketwatch.com/marketwatch/topstories/",
+                "Reuters": "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best",
+                "CNBC": "https://www.cnbc.com/id/10000664/device/rss/rss.html",
+                "Barron's": "https://feeds.barrons.com/barrons/index.xml",
+                "Business Insider": "https://feeds.businessinsider.com/custom/all",
+                "Yahoo Finance": "https://finance.yahoo.com/news/rssindex",
+                "Harvard Business Review": "http://feeds.hbr.org/harvardbusiness",
+                "Financial Times": "https://www.ft.com/?format=rss"
+            },
+
+            async fetchNews(sourceName) {
+                const url = this.feeds[sourceName];
+                if (!url) return null;
+
+                try {
+                    // Use rss2json to bypass CORS
+                    const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`);
+                    const data = await response.json();
+
+                    if (data.status === 'ok' && data.items.length > 0) {
+                        const item = data.items[0]; // Get latest
+                        return {
+                            source: sourceName,
+                            headline: item.title,
+                            snippet: item.description ? item.description.replace(/<[^>]*>/g, '').substring(0, 100) + '...' : 'Latest market updates.',
+                            link: item.link,
+                            timestamp: Date.now()
+                        };
+                    }
+                } catch (e) {
+                    console.warn(`RSS Fetch failed for ${sourceName}, falling back to simulation.`);
+                }
+                return null;
+            }
+        };
+
         const NewsGenerator = {
             sources: ["The Economist", "Financial Times", "Bloomberg", "Wall Street Journal", "Forbes", "Marketwatch", "Reuters", "Investopedia", "Harvard Business Review", "Morningstar", "Business Insider", "Yahoo Finance", "CNBC", "Barron's"],
             verbs: ["surges", "soars", "plummets", "drops", "rallies", "stabilizes", "rebounds", "crashes", "jumps", "slides"],
@@ -1038,62 +1079,73 @@
             }
         };
 
-        function updateNews(manual = false) {
-            // Generate 1-2 new articles
-            const count = manual ? 3 : 1;
-            for (let i = 0; i < count; i++) {
-                const article = NewsGenerator.generate();
-                // Find source in marketData to prepend, or just add to first one (since we flatten it anyway)
+        async function updateNews(manual = false) {
+            const btn = document.querySelector('button[title="Refresh Feed"]');
+            if (manual && btn) {
+                btn.style.transform = 'rotate(360deg)';
+                btn.style.transition = 'transform 1s';
+            }
+
+            // Pick 1-2 sources to update
+            const targets = manual ? 3 : 1;
+
+            for (let i = 0; i < targets; i++) {
+                // Try 50/50 Real vs Sim if manual, or just random source
+                const sourceList = NewsGenerator.sources;
+                const targetSource = sourceList[Math.floor(Math.random() * sourceList.length)];
+
+                let article = await RSSFetcher.fetchNews(targetSource);
+
+                // Fallback if RSS failed or no feed for this source
+                if (!article) {
+                    article = NewsGenerator.generate();
+                }
+
                 if (typeof marketData !== 'undefined' && marketData.length > 0) {
-                    marketData[0].articles.unshift(article);
-                    if (marketData[0].articles.length > 50) marketData[0].articles.pop();
+                    // Ensure uniqueness to avoid duplicate RSS items
+                    const exists = marketData[0].articles.find(a => a.headline === article.headline);
+                    if (!exists) {
+                        marketData[0].articles.unshift(article);
+                        if (marketData[0].articles.length > 50) marketData[0].articles.pop();
+                    }
                 }
             }
 
             renderGrid();
-            if (manual) {
-                const btn = document.querySelector('button[title="Refresh Feed"]');
-                if (btn) {
-                    btn.style.transform = 'rotate(360deg)';
-                    btn.style.transition = 'transform 0.5s';
-                    setTimeout(() => { btn.style.transform = 'none'; btn.style.transition = ''; }, 500);
-                }
+
+            if (manual && btn) {
+                setTimeout(() => { btn.style.transform = 'none'; btn.style.transition = ''; }, 1000);
             }
         }
 
         // Micro-Interactions: Ripple Effect
-        function initRipple() {
-            document.body.addEventListener('click', function (e) {
-                const target = e.target.closest('button, .filter-chip, .ticker-item, .article-card');
-                if (target) {
-                    const rect = target.getBoundingClientRect();
-                    const circle = document.createElement('span');
-                    const diameter = Math.max(rect.width, rect.height);
-                    const radius = diameter / 2;
+        document.body.addEventListener('click', function (e) {
+            const target = e.target.closest('button, .filter-chip, .ticker-item, .article-card');
+            if (target) {
+                const rect = target.getBoundingClientRect();
+                const circle = document.createElement('span');
+                const diameter = Math.max(rect.width, rect.height);
+                const radius = diameter / 2;
 
-                    circle.style.width = circle.style.height = `${diameter}px`;
-                    circle.style.left = `${e.clientX - rect.left - radius}px`;
-                    circle.style.top = `${e.clientY - rect.top - radius}px`;
-                    circle.classList.add('ripple');
+                circle.style.width = circle.style.height = `${diameter}px`;
+                circle.style.left = `${e.clientX - rect.left - radius}px`;
+                circle.style.top = `${e.clientY - rect.top - radius}px`;
+                circle.classList.add('ripple');
 
-                    const oldRipple = target.getElementsByClassName('ripple')[0];
-                    if (oldRipple) oldRipple.remove(); // Clean up
+                const oldRipple = target.getElementsByClassName('ripple')[0];
+                if (oldRipple) oldRipple.remove(); // Clean up
 
-                    if (window.getComputedStyle(target).position === 'static') {
-                        target.style.position = 'relative';
-                    }
-                    if (window.getComputedStyle(target).overflow !== 'hidden') {
-                        target.style.overflow = 'hidden';
-                    }
-
-                    target.appendChild(circle);
-                    setTimeout(() => circle.remove(), 600);
+                if (window.getComputedStyle(target).position === 'static') {
+                    target.style.position = 'relative';
                 }
-            });
-        }
+                if (window.getComputedStyle(target).overflow !== 'hidden') {
+                    target.style.overflow = 'hidden';
+                }
 
-        // Initialize Ripple
-        initRipple();
+                target.appendChild(circle);
+                setTimeout(() => circle.remove(), 600);
+            }
+        });
 
         // News Auto-Update (1 Hour)
         setInterval(() => updateNews(false), 3600000);
