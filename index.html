@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
         rel="stylesheet">
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
@@ -32,10 +32,14 @@
             --neutral: #eab308;
             --font-serif: 'Playfair Display', serif;
             --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
 
             --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.5);
             --toast-bg: #1e293b;
             --sidebar-width: 300px;
+
+            --bullish-glow: rgba(34, 197, 94, 0.4);
+            --bearish-glow: rgba(239, 68, 68, 0.4);
         }
 
         [data-theme="light"] {
@@ -77,26 +81,68 @@
         }
 
         /* Aura BG */
+        /* Aurora BG */
         .ambient-light {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
             z-index: -1;
             pointer-events: none;
-            animation: pulse-bg 10s infinite alternate;
+            overflow: hidden;
+            background: #050511;
         }
 
-        @keyframes pulse-bg {
+        .aurora-blob {
+            position: absolute;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s infinite alternate;
+        }
+
+        .blob-1 {
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vh;
+            background: #4f46e5;
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            bottom: -10%;
+            right: -10%;
+            width: 60vw;
+            height: 60vh;
+            background: #7c3aed;
+            animation-delay: -5s;
+        }
+
+        .blob-3 {
+            top: 40%;
+            left: 40%;
+            width: 40vw;
+            height: 40vh;
+            background: #059669;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
             0% {
-                opacity: 0.5;
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(30px, -50px) scale(1.1);
+            }
+
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
             }
 
             100% {
-                opacity: 0.8;
+                transform: translate(0, 0) scale(1);
             }
         }
 
@@ -470,13 +516,65 @@
             pointer-events: auto;
         }
 
-        .sparkline {
-            width: 40px;
-            height: 20px;
-            stroke-width: 2;
-            fill: none;
-            opacity: 0.8;
+        .mobile-nav {
+            display: flex;
         }
+
+        .header-controls .icon-btn {
+            display: none;
+        }
+
+        /* Hide desktop icons */
+        .header-controls .nav-select {
+            display: none;
+        }
+
+        .analyst-sidebar {
+            width: 100%;
+        }
+
+        /* Full width sidebar on mobile */
+        }
+
+        /* Neon & Ripple */
+        .bullish-glow {
+            box-shadow: 0 0 15px var(--bullish-glow);
+            border-color: var(--bullish) !important;
+        }
+
+        .bearish-glow {
+            box-shadow: 0 0 15px var(--bearish-glow);
+            border-color: var(--bearish) !important;
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            background-color: rgba(255, 255, 255, 0.3);
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Monospace Application */
+        .ticker-item span:last-child,
+        .heatmap-cell div:nth-child(2),
+        .sector-list td,
+        .gauge-val,
+        #time-ny,
+        #time-ldn,
+        #time-tky {
+            font-family: var(--font-mono);
+            letter-spacing: -0.5px;
+        }
+
 
         .skeleton {
             background: linear-gradient(90deg, var(--card-glass) 25%, rgba(255, 255, 255, 0.1) 50%, var(--card-glass) 75%);
@@ -500,7 +598,11 @@
 </head>
 
 <body>
-    <div class="ambient-light"></div>
+    <div class="ambient-light">
+        <div class="aurora-blob blob-1"></div>
+        <div class="aurora-blob blob-2"></div>
+        <div class="aurora-blob blob-3"></div>
+    </div>
 
     <div class="analyst-sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -896,7 +998,39 @@
             }
         };
 
+        // Micro-Interactions: Ripple Effect
+        function initRipple() {
+            document.body.addEventListener('click', function (e) {
+                const target = e.target.closest('button, .filter-chip, .ticker-item, .article-card');
+                if (target) {
+                    const rect = target.getBoundingClientRect();
+                    const circle = document.createElement('span');
+                    const diameter = Math.max(rect.width, rect.height);
+                    const radius = diameter / 2;
 
+                    circle.style.width = circle.style.height = `${diameter}px`;
+                    circle.style.left = `${e.clientX - rect.left - radius}px`;
+                    circle.style.top = `${e.clientY - rect.top - radius}px`;
+                    circle.classList.add('ripple');
+
+                    const oldRipple = target.getElementsByClassName('ripple')[0];
+                    if (oldRipple) oldRipple.remove(); // Clean up
+
+                    if (window.getComputedStyle(target).position === 'static') {
+                        target.style.position = 'relative';
+                    }
+                    if (window.getComputedStyle(target).overflow !== 'hidden') {
+                        target.style.overflow = 'hidden';
+                    }
+
+                    target.appendChild(circle);
+                    setTimeout(() => circle.remove(), 600);
+                }
+            });
+        }
+
+        // Initialize Ripple
+        initRipple();
 
         const assets = [
             // Crypto (15)
@@ -1086,8 +1220,14 @@
                     }
                 }
 
+                // Glow Logic (High volatility)
+                const change24 = (a.price - a.history[0]) / a.history[0];
+                let glowClass = '';
+                if (change24 > 0.03) glowClass = 'bullish-glow';
+                if (change24 < -0.03) glowClass = 'bearish-glow';
+
                 return `
-                <div class="ticker-item ${flashClass}" onclick="openChart('${a.id}')" onmousemove="showTickerTooltip(event, '${a.id}')" onmouseleave="hideTickerTooltip()">
+                <div class="ticker-item ${flashClass} ${glowClass}" onclick="openChart('${a.id}')" onmousemove="showTickerTooltip(event, '${a.id}')" onmouseleave="hideTickerTooltip()">
                     <span>${a.id}</span>
                     <svg class="sparkline" style="stroke:${color}"><polyline points="${points}"/></svg>
                     <span>${formatPrice(a.price)}</span>
@@ -1268,7 +1408,12 @@
                 const items = sectors[s];
                 const change = items.reduce((acc, i) => acc + (i.price - i.history[0]) / i.history[0], 0) / items.length;
                 const hue = change >= 0 ? 142 : 0;
-                return `<div class="heatmap-cell" onclick="showSectorDetails('${s}')" style="background:hsl(${hue}, ${Math.min(Math.abs(change) * 5000, 80)}%, 30%)">
+
+                let glowClass = '';
+                if (change > 0.02) glowClass = 'bullish-glow';
+                if (change < -0.02) glowClass = 'bearish-glow';
+
+                return `<div class="heatmap-cell ${glowClass}" onclick="showSectorDetails('${s}')" style="background:hsl(${hue}, ${Math.min(Math.abs(change) * 5000, 80)}%, 30%)">
                     <div style="font-size:18px;font-weight:bold">${s}</div>
                     <div>${(change * 100).toFixed(2)}%</div>
                     <div style="font-size:11px;opacity:0.7;margin-top:5px">${items.length} Assets</div>
