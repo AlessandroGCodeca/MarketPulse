@@ -670,6 +670,7 @@
                     <button class="filter-chip" onclick="applyScreener('tech')">Tech Only</button>
                 </div>
                 <div>
+                    <button class="icon-btn" onclick="updateNews(true)" title="Refresh Feed">🔄</button>
                     <button class="icon-btn active" onclick="setView('grid')" data-i18n="grid">Grid</button>
                     <button class="icon-btn" onclick="setView('heatmap')" data-i18n="heatmap">Heatmap</button>
                 </div>
@@ -997,6 +998,69 @@
             }
         };
 
+        // --- Dynamic News Engine ---
+        const NewsGenerator = {
+            sources: ["The Economist", "Financial Times", "Bloomberg", "Wall Street Journal", "Forbes", "Marketwatch", "Reuters", "Investopedia", "Harvard Business Review", "Morningstar", "Business Insider", "Yahoo Finance", "CNBC", "Barron's"],
+            verbs: ["surges", "soars", "plummets", "drops", "rallies", "stabilizes", "rebounds", "crashes", "jumps", "slides"],
+            adjectives: ["unprecedented", "massive", "unexpected", "sharp", "steady", "volatile", "record-breaking", "sudden"],
+            reasons: ["after Fed comments", "following earnings beat", "amid regulatory fears", "on tech optimism", "despite inflation data", "after analyst upgrade", "on supply chain woes", "amid geopolitical tension"],
+            templates: [
+                "{Asset} {Verb} {Reason} in early trading.",
+                "{Source} reports {Adjective} outlook for {Sector} stocks.",
+                "Why {Asset} is seeing {Adjective} volatility today.",
+                "{Sector} market {Verb} as investors digest new data.",
+                "Analysts warn of {Adjective} risks for {Asset} following {Reason}."
+            ],
+
+            generate() {
+                const source = this.sources[Math.floor(Math.random() * this.sources.length)];
+                const asset = assets[Math.floor(Math.random() * assets.length)];
+                const verb = this.verbs[Math.floor(Math.random() * this.verbs.length)];
+                const adj = this.adjectives[Math.floor(Math.random() * this.adjectives.length)];
+                const reason = this.reasons[Math.floor(Math.random() * this.reasons.length)];
+                const template = this.templates[Math.floor(Math.random() * this.templates.length)];
+
+                const headline = template
+                    .replace("{Asset}", asset.name)
+                    .replace("{Verb}", verb)
+                    .replace("{Reason}", reason)
+                    .replace("{Source}", source)
+                    .replace("{Adjective}", adj)
+                    .replace("{Sector}", asset.sector);
+
+                return {
+                    source: source,
+                    headline: headline,
+                    snippet: `Latest updates from ${source} on the developing situation regarding ${asset.name}.`,
+                    link: "#",
+                    timestamp: Date.now()
+                };
+            }
+        };
+
+        function updateNews(manual = false) {
+            // Generate 1-2 new articles
+            const count = manual ? 3 : 1;
+            for (let i = 0; i < count; i++) {
+                const article = NewsGenerator.generate();
+                // Find source in marketData to prepend, or just add to first one (since we flatten it anyway)
+                if (typeof marketData !== 'undefined' && marketData.length > 0) {
+                    marketData[0].articles.unshift(article);
+                    if (marketData[0].articles.length > 50) marketData[0].articles.pop();
+                }
+            }
+
+            renderGrid();
+            if (manual) {
+                const btn = document.querySelector('button[title="Refresh Feed"]');
+                if (btn) {
+                    btn.style.transform = 'rotate(360deg)';
+                    btn.style.transition = 'transform 0.5s';
+                    setTimeout(() => { btn.style.transform = 'none'; btn.style.transition = ''; }, 500);
+                }
+            }
+        }
+
         // Micro-Interactions: Ripple Effect
         function initRipple() {
             document.body.addEventListener('click', function (e) {
@@ -1030,6 +1094,9 @@
 
         // Initialize Ripple
         initRipple();
+
+        // News Auto-Update (1 Hour)
+        setInterval(() => updateNews(false), 3600000);
 
         const assets = [
             // Crypto (15)
