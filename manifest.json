@@ -1,16 +1,29 @@
 {
     "name": "Market Pulse Pro",
     "short_name": "MarketPulse",
+    "description": "Professional financial dashboard with real-time market data, news, and analysis",
     "start_url": "./index.html",
+    "scope": "./",
     "display": "standalone",
     "background_color": "#050511",
     "theme_color": "#050511",
     "orientation": "any",
+    "categories": ["finance", "business", "news"],
     "icons": [
         {
             "src": "app_icon.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "View Heatmap",
+            "short_name": "Heatmap",
+            "description": "View sector heatmap",
+            "url": "./index.html#heatmap"
         }
     ]
 }

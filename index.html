@@ -425,12 +425,37 @@
             align-items: center;
             color: #fff;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.3s, box-shadow 0.3s;
+            backdrop-filter: blur(8px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .heatmap-cell::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            padding: 2px;
+            background: linear-gradient(135deg, transparent, transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .heatmap-cell:hover::before {
+            background: linear-gradient(135deg, var(--accent-blue), #7c3aed, #ec4899);
+            opacity: 1;
+            animation: gradient-rotate 3s linear infinite;
         }
 
         .heatmap-cell:hover {
-            transform: scale(1.02);
+            transform: scale(1.03);
             z-index: 2;
+            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.2);
         }
 
         .view-hidden {
@@ -466,18 +491,53 @@
         }
 
         .article-card {
-            background: var(--card-glass);
-            border: 1px solid var(--card-border);
+            background: rgba(22, 27, 34, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
             break-inside: avoid;
-            transition: transform 0.2s;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .article-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            padding: 1px;
+            background: linear-gradient(135deg, transparent, transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .article-card:hover::before {
+            background: linear-gradient(135deg, var(--accent-blue), #7c3aed, #ec4899);
+            opacity: 1;
+            animation: gradient-rotate 3s linear infinite;
         }
 
         .article-card:hover {
-            transform: translateY(-3px);
-            border-color: var(--accent-blue);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(59, 130, 246, 0.15);
+        }
+
+        @keyframes gradient-rotate {
+            0% {
+                filter: hue-rotate(0deg);
+            }
+
+            100% {
+                filter: hue-rotate(360deg);
+            }
         }
 
         .headline {
@@ -640,10 +700,11 @@
             </div>
             <div class="header-controls">
 
-                <select id="currency" class="nav-select" onchange="updateCurrency(this.value)">
+                <select id="currency-select" class="nav-select">
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
                     <option value="GBP">GBP (£)</option>
+                    <option value="JPY">JPY (¥)</option>
                 </select>
 
 
@@ -654,6 +715,27 @@
         </header>
 
         <main>
+            <!-- Market Status Bar -->
+            <div id="market-status-bar"
+                style="display:flex; gap:20px; justify-content:center; margin-bottom:20px; padding:12px; background:rgba(255,255,255,0.03); border-radius:8px; font-size:11px; flex-wrap:wrap;">
+            </div>
+
+            <!-- Top Movers Section -->
+            <div id="top-movers" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:25px;">
+                <div
+                    style="background:rgba(34,197,94,0.05); border:1px solid rgba(34,197,94,0.2); border-radius:10px; padding:15px;">
+                    <div style="font-size:12px; font-weight:600; margin-bottom:10px; color:var(--bullish);">🚀 TOP
+                        GAINERS</div>
+                    <div id="top-gainers"></div>
+                </div>
+                <div
+                    style="background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:15px;">
+                    <div style="font-size:12px; font-weight:600; margin-bottom:10px; color:var(--bearish);">📉 TOP
+                        LOSERS</div>
+                    <div id="top-losers"></div>
+                </div>
+            </div>
+
             <div id="word-cloud"
                 style="text-align:center; margin-bottom:30px; padding-bottom:20px; border-bottom:1px solid var(--card-border)">
             </div>
@@ -661,13 +743,18 @@
             <!-- Stock Screener & View Controls -->
             <div
                 style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center; flex-wrap:wrap; gap:10px">
-                <div class="screener-controls">
-                    <span style="font-size:12px; opacity:0.7; margin-right:10px; font-weight:600"
-                        data-i18n="screener">SCREENER:</span>
+                <div class="screener-controls" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <span style="font-size:12px; opacity:0.7; font-weight:600" data-i18n="screener">SCREENER:</span>
+                    <input type="text" id="search-input" placeholder="Search stocks, crypto..." style="background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); 
+                        border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text-primary);
+                        width: 180px; outline: none; transition: border-color 0.2s;" oninput="handleSearch(this.value)"
+                        onfocus="this.style.borderColor='var(--accent-blue)'"
+                        onblur="this.style.borderColor='var(--card-border)'">
                     <button class="filter-chip active" onclick="applyScreener('all')">All</button>
                     <button class="filter-chip" onclick="applyScreener('gainers')">Top Gainers</button>
                     <button class="filter-chip" onclick="applyScreener('crypto')">Crypto</button>
                     <button class="filter-chip" onclick="applyScreener('tech')">Tech Only</button>
+                    <button class="filter-chip" onclick="applyScreener('saved')" id="saved-filter">🔖 Saved</button>
                 </div>
                 <div>
                     <button class="icon-btn" onclick="updateNews(true)" title="Refresh Feed">🔄</button>
@@ -884,8 +971,25 @@
             <p id="news-snippet"
                 style="font-size:16px; line-height:1.6; color:var(--text-secondary); margin-bottom:30px">
                 Snippet</p>
-            <button id="news-link-btn" class="trade-btn btn-buy" style="font-size:14px; padding:10px 24px;">Read Full
-                Article</button>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:20px;">
+                <button id="news-link-btn" class="trade-btn btn-buy" style="font-size:14px; padding:10px 24px;">Read
+                    Full Article</button>
+            </div>
+            <!-- Social Sharing -->
+            <div
+                style="display:flex; gap:12px; justify-content:center; margin-top:15px; padding-top:15px; border-top:1px solid var(--card-border);">
+                <button onclick="shareToTwitter()"
+                    style="background:none; border:none; cursor:pointer; font-size:20px; opacity:0.7; transition:opacity 0.2s;"
+                    onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7"
+                    title="Share on X/Twitter">𝕏</button>
+                <button onclick="shareToLinkedIn()"
+                    style="background:none; border:none; cursor:pointer; font-size:20px; opacity:0.7; transition:opacity 0.2s;"
+                    onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7"
+                    title="Share on LinkedIn">💼</button>
+                <button onclick="copyNewsLink()"
+                    style="background:none; border:none; cursor:pointer; font-size:20px; opacity:0.7; transition:opacity 0.2s;"
+                    onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" title="Copy Link">🔗</button>
+            </div>
         </div>
     </div>
 
@@ -1296,8 +1400,12 @@
             initPWA();
             analyzeSentiment();
             updateCalendar(); // New Calendar Widget
+            updateMarketStatus(); // Market Status Indicator
+            updateTopMovers(); // Top Gainers/Losers
+            updateFearGreed(); // Enhanced Fear & Greed
             setInterval(simulateMarket, 1000);
             setInterval(updateClocks, 1000);
+            setInterval(updateMarketStatus, 60000); // Update market status every minute
             setInterval(cycleTitle, 3000); // New Dynamic Title
             updateClocks();
             isLoading = false; // CRITICAL: Reveal the content after init
@@ -1324,7 +1432,56 @@
             document.getElementById('time-tky').innerText = fmt('Asia/Tokyo');
         }
 
+        // --- Market Status Indicator ---
+        function updateMarketStatus() {
+            const now = new Date();
+            const markets = [
+                { name: 'NYSE', tz: 'America/New_York', open: 9.5, close: 16, flag: '🇺🇸' },
+                { name: 'LSE', tz: 'Europe/London', open: 8, close: 16.5, flag: '🇬🇧' },
+                { name: 'TSE', tz: 'Asia/Tokyo', open: 9, close: 15, flag: '🇯🇵' }
+            ];
+            const statusBar = document.getElementById('market-status-bar');
+            if (!statusBar) return;
+            statusBar.innerHTML = markets.map(m => {
+                const localTime = new Date(now.toLocaleString('en-US', { timeZone: m.tz }));
+                const hours = localTime.getHours() + localTime.getMinutes() / 60;
+                const isOpen = hours >= m.open && hours < m.close;
+                const isWeekend = localTime.getDay() === 0 || localTime.getDay() === 6;
+                let status, color, countdown;
+                if (isWeekend) { status = 'CLOSED'; color = 'var(--text-secondary)'; countdown = 'Weekend'; }
+                else if (isOpen) { status = 'OPEN'; color = 'var(--bullish)'; const minsLeft = Math.floor((m.close - hours) * 60); countdown = `Closes in ${Math.floor(minsLeft / 60)}h ${minsLeft % 60}m`; }
+                else { status = 'CLOSED'; color = 'var(--bearish)'; const minsToOpen = hours < m.open ? Math.floor((m.open - hours) * 60) : Math.floor((24 - hours + m.open) * 60); countdown = `Opens in ${Math.floor(minsToOpen / 60)}h ${minsToOpen % 60}m`; }
+                return `<div style="display:flex;align-items:center;gap:6px"><span>${m.flag}</span><span style="font-weight:600">${m.name}</span><span style="padding:2px 6px;border-radius:4px;background:${color}20;color:${color};font-weight:600">${status}</span><span style="opacity:0.6">${countdown}</span></div>`;
+            }).join('');
+        }
 
+        // --- Top Movers ---
+        function updateTopMovers() {
+            const sorted = [...assets].map(a => ({ ...a, change: ((a.price - a.history[0]) / a.history[0]) * 100 })).sort((a, b) => b.change - a.change);
+            const gainers = sorted.slice(0, 3);
+            const losers = sorted.slice(-3).reverse();
+            document.getElementById('top-gainers').innerHTML = gainers.map(a => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer" onclick="openChart('${a.id}')"><span style="font-weight:500">${a.id}</span><span style="color:var(--bullish);font-family:var(--font-mono)">+${a.change.toFixed(2)}%</span></div>`).join('');
+            document.getElementById('top-losers').innerHTML = losers.map(a => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer" onclick="openChart('${a.id}')"><span style="font-weight:500">${a.id}</span><span style="color:var(--bearish);font-family:var(--font-mono)">${a.change.toFixed(2)}%</span></div>`).join('');
+        }
+
+        // --- Enhanced Fear & Greed ---
+        function updateFearGreed() {
+            let upCount = 0, totalChange = 0;
+            assets.forEach(a => { const change = (a.price - a.history[0]) / a.history[0]; totalChange += change; if (change > 0) upCount++; });
+            const upRatio = upCount / assets.length;
+            const avgChange = totalChange / assets.length;
+            let score = Math.round((upRatio * 50) + (Math.min(avgChange * 500, 50) + 50) / 2);
+            score = Math.max(0, Math.min(100, score));
+            let label, color;
+            if (score < 25) { label = 'Extreme Fear'; color = 'var(--bearish)'; }
+            else if (score < 40) { label = 'Fear'; color = '#f97316'; }
+            else if (score < 60) { label = 'Neutral'; color = 'var(--neutral)'; }
+            else if (score < 75) { label = 'Greed'; color = '#84cc16'; }
+            else { label = 'Extreme Greed'; color = 'var(--bullish)'; }
+            document.getElementById('sentiment-val').innerText = score;
+            document.getElementById('sentiment-val').style.color = color;
+            document.getElementById('sentiment-text').innerText = label;
+        }
 
         // --- Renderers ---
         function renderTicker() {
@@ -1445,6 +1602,92 @@
 
         // --- Stock Screener ---
         let activeFilter = 'all';
+        let searchQuery = '';
+
+        // --- Search Handler ---
+        function handleSearch(query) {
+            searchQuery = query.toLowerCase().trim();
+            renderGrid();
+        }
+
+        // --- Bookmarks (localStorage) ---
+        const savedBookmarks = JSON.parse(localStorage.getItem('newsBookmarks') || '[]');
+
+        function toggleBookmark(articleId) {
+            const idx = savedBookmarks.indexOf(articleId);
+            if (idx > -1) {
+                savedBookmarks.splice(idx, 1);
+            } else {
+                savedBookmarks.push(articleId);
+            }
+            localStorage.setItem('newsBookmarks', JSON.stringify(savedBookmarks));
+            renderGrid();
+        }
+
+        function isBookmarked(articleId) {
+            return savedBookmarks.includes(articleId);
+        }
+
+        // --- Currency Converter ---
+        let currencyRates = { USD: 1, EUR: 0.92, GBP: 0.79, JPY: 149.5 };
+        let activeCurrency = 'USD';
+
+        async function fetchCurrencyRates() {
+            try {
+                const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const data = await res.json();
+                currencyRates = { USD: 1, EUR: data.rates.EUR, GBP: data.rates.GBP, JPY: data.rates.JPY };
+            } catch (e) {
+                console.warn('Currency API Error (using defaults):', e);
+            }
+        }
+
+        function setCurrency(currency) {
+            activeCurrency = currency;
+            renderTicker();
+            renderHeatmap();
+        }
+
+        function formatPrice(usdPrice) {
+            const converted = usdPrice * (currencyRates[activeCurrency] || 1);
+            const symbols = { USD: '$', EUR: '€', GBP: '£', JPY: '¥' };
+            const decimals = activeCurrency === 'JPY' ? 0 : 2;
+            return symbols[activeCurrency] + converted.toFixed(decimals);
+        }
+
+        // Wire up currency selector
+        document.addEventListener('DOMContentLoaded', () => {
+            const currSel = document.getElementById('currency-select');
+            if (currSel) {
+                currSel.addEventListener('change', (e) => setCurrency(e.target.value));
+            }
+            fetchCurrencyRates();
+        });
+
+        // --- Sparkline Drawing ---
+        function drawSparkline(canvas, data, color = '#3b82f6') {
+            if (!canvas || !data || data.length < 2) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const range = max - min || 1;
+
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+
+            data.forEach((val, i) => {
+                const x = (i / (data.length - 1)) * w;
+                const y = h - ((val - min) / range) * h;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        }
 
         function applyScreener(filter) {
             activeFilter = filter;
@@ -1483,13 +1726,27 @@
             const grid = document.getElementById('grid-view');
             let allArticles = (typeof marketData !== 'undefined' ? marketData : []).flatMap(s => s.articles.map(a => ({ ...a, source: s.source })));
 
-            // Filter Logic
+            // Add unique IDs if missing
+            allArticles.forEach((a, i) => {
+                if (!a.id) a.id = `article-${i}-${a.headline.substring(0, 20).replace(/\s/g, '')}`;
+            });
+
+            // Search Filter
+            if (searchQuery) {
+                allArticles = allArticles.filter(a => {
+                    const txt = (a.headline + a.snippet + a.source).toLowerCase();
+                    return txt.includes(searchQuery);
+                });
+            }
+
+            // Category Filter Logic
             if (activeFilter !== 'all') {
                 allArticles = allArticles.filter(a => {
                     const txt = (a.headline + a.snippet).toLowerCase();
                     if (activeFilter === 'tech') return txt.match(/tech|ai|chip|apple|nvidia|amd|microsoft|google/);
                     if (activeFilter === 'crypto') return txt.match(/crypto|bitcoin|coin|token|block/);
                     if (activeFilter === 'gainers') return txt.match(/surge|jump|record|soar|rally/);
+                    if (activeFilter === 'saved') return isBookmarked(a.id);
                     return true;
                 });
             }
@@ -1498,14 +1755,18 @@
 
             grid.innerHTML = filteredArticles.length ? filteredArticles.map((a, i) => {
                 const sent = getSentiment(a.headline);
+                const bookmarked = isBookmarked(a.id);
                 return `
-                <div class="article-card" onclick="openNews(${i})" style="cursor:pointer">
+                <div class="article-card" style="cursor:pointer">
                     <div style="display:flex;justify-content:space-between;margin-bottom:5px">
                          <div style="font-size:10px;opacity:0.6;text-transform:uppercase">${a.source || 'News'}</div>
-                         <div style="font-size:9px;padding:2px 6px;border-radius:4px;background:${sent.color}20;color:${sent.color}">${sent.label}</div>
+                         <div style="display:flex;gap:8px;align-items:center">
+                             <button onclick="event.stopPropagation();toggleBookmark('${a.id}')" style="background:none;border:none;cursor:pointer;font-size:14px;opacity:${bookmarked ? 1 : 0.4};transition:opacity 0.2s" title="${bookmarked ? 'Remove bookmark' : 'Save article'}">${bookmarked ? '🔖' : '📑'}</button>
+                             <div style="font-size:9px;padding:2px 6px;border-radius:4px;background:${sent.color}20;color:${sent.color}">${sent.label}</div>
+                         </div>
                     </div>
-                    <div class="headline">${a.headline}</div>
-                    <div style="font-size:13px;opacity:0.8">${a.snippet}</div>
+                    <div class="headline" onclick="openNews(${i})">${a.headline}</div>
+                    <div style="font-size:13px;opacity:0.8" onclick="openNews(${i})">${a.snippet}</div>
                 </div>`;
             }).join('') : '<div style="grid-column:1/-1;text-align:center;padding:40px;opacity:0.5">No news matches this filter.</div>';
         }
@@ -1600,9 +1861,12 @@
 
         function closeChart() { document.getElementById('chart-modal').style.display = 'none'; currentAssetId = null; }
 
+        let currentNewsArticle = null;
+
         function openNews(index) {
             const article = filteredArticles[index];
             if (!article) return;
+            currentNewsArticle = article; // Store for sharing
             document.getElementById('news-source').innerText = article.source || 'News';
             document.getElementById('news-headline').innerText = article.headline;
             document.getElementById('news-snippet').innerText = article.snippet;
@@ -1612,6 +1876,31 @@
 
         function closeNews() {
             document.getElementById('news-modal').style.display = 'none';
+            currentNewsArticle = null;
+        }
+
+        // --- Social Sharing ---
+        function shareToTwitter() {
+            if (!currentNewsArticle) return;
+            const text = encodeURIComponent(`${currentNewsArticle.headline} via @MarketPulse`);
+            const url = encodeURIComponent(currentNewsArticle.link || window.location.href);
+            window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=550,height=420');
+        }
+
+        function shareToLinkedIn() {
+            if (!currentNewsArticle) return;
+            const url = encodeURIComponent(currentNewsArticle.link || window.location.href);
+            window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank', 'width=550,height=520');
+        }
+
+        function copyNewsLink() {
+            if (!currentNewsArticle) return;
+            const link = currentNewsArticle.link || window.location.href;
+            navigator.clipboard.writeText(link).then(() => {
+                showToast('Link copied to clipboard!', 'info');
+            }).catch(() => {
+                showToast('Failed to copy link', 'down');
+            });
         }
 
         // --- Sector Drill-down ---
@@ -1692,6 +1981,8 @@
         async function simulateMarket() {
             await DataService.updateAssets();
             updateCurrency(currentCurrency);
+            updateTopMovers();
+            updateFearGreed();
         }
 
         // --- Helpers ---
