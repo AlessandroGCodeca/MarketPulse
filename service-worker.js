@@ -1,8 +1,9 @@
-const CACHE_NAME = 'market-pulse-v5';
+const CACHE_NAME = 'market-pulse-v6';
 const ASSETS = [
     './',
     './index.html',
     './data.js',
+    './security.js',
     './manifest.json',
     './app_icon.png',
     './offline.html'
