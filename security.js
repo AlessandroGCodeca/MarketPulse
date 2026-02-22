@@ -357,7 +357,9 @@ const SecurityUtils = {
     showSecurityWarning(message) {
         // Use existing toast system if available
         if (typeof showToast === 'function') {
-            showToast('⚠️ ' + message, 'warning');
+            // Disable popup, just log to console to prevent screen clutter
+            // showToast('⚠️ ' + message, 'warning');
+            console.warn('Security Warning:', message);
         } else {
             console.warn('Security Warning:', message);
         }
