@@ -36,7 +36,7 @@
     <div class="analyst-sidebar" id="sidebar">
         <div class="sidebar-header">
             <span data-i18n="analyst">AI Market Analyst</span>
-            <button onclick="toggleSidebar()"
+            <button onclick="toggleSidebar()" aria-label="Close Analyst Sidebar"
                 style="background:none;border:none;color:inherit;cursor:pointer">✕</button>
         </div>
         <div class="sentiment-card">
@@ -93,9 +93,11 @@
                 </select>
 
 
-                <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">🌗</button>
-                <button class="icon-btn" onclick="toggleSidebar()" title="AI Analyst">🤖</button>
-                <button class="icon-btn" onclick="exportCSV()" title="Export CSV">📥</button>
+                <button class="icon-btn" onclick="toggleTheme()" aria-label="Toggle Theme"
+                    title="Toggle Theme">🌗</button>
+                <button class="icon-btn" onclick="toggleSidebar()" aria-label="Toggle AI Analyst"
+                    title="AI Analyst">🤖</button>
+                <button class="icon-btn" onclick="exportCSV()" aria-label="Export to CSV" title="Export CSV">📥</button>
             </div>
         </header>
 
@@ -127,9 +129,12 @@
                     <button class="filter-chip" onclick="applyScreener('saved')" id="saved-filter">🔖 Saved</button>
                 </div>
                 <div>
-                    <button class="icon-btn" onclick="updateNews(true)" title="Refresh Feed">🔄</button>
-                    <button class="icon-btn active" onclick="setView('grid')" data-i18n="grid">Grid</button>
-                    <button class="icon-btn" onclick="setView('heatmap')" data-i18n="heatmap">Heatmap</button>
+                    <button class="icon-btn" onclick="updateNews(true)" aria-label="Refresh Feed"
+                        title="Refresh Feed">🔄</button>
+                    <button class="icon-btn active" onclick="setView('grid')" aria-label="Grid View"
+                        data-i18n="grid">Grid</button>
+                    <button class="icon-btn" onclick="setView('heatmap')" aria-label="Heatmap View"
+                        data-i18n="heatmap">Heatmap</button>
                 </div>
             </div>
 
@@ -152,7 +157,7 @@
                 <div>
                     <h2 id="chart-title" style="font-family:var(--font-serif)">Asset Chart</h2>
                 </div>
-                <button onclick="closeChart()"
+                <button onclick="closeChart()" aria-label="Close Chart"
                     style="background:none;border:none;color:inherit;font-size:20px;cursor:pointer">✕</button>
             </div>
             <div id="tv-chart" style="flex:1; width:100%; height:100%"></div>
@@ -178,15 +183,15 @@
             <!-- Social Sharing -->
             <div
                 style="display:flex; gap:12px; justify-content:center; margin-top:15px; padding-top:15px; border-top:1px solid var(--card-border);">
-                <button onclick="shareToTwitter()"
+                <button onclick="shareToTwitter()" aria-label="Share on X/Twitter"
                     style="background:none; border:none; cursor:pointer; font-size:20px; opacity:0.7; transition:opacity 0.2s;"
                     onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7"
                     title="Share on X/Twitter">𝕏</button>
-                <button onclick="shareToLinkedIn()"
+                <button onclick="shareToLinkedIn()" aria-label="Share on LinkedIn"
                     style="background:none; border:none; cursor:pointer; font-size:20px; opacity:0.7; transition:opacity 0.2s;"
                     onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7"
                     title="Share on LinkedIn">💼</button>
-                <button onclick="copyNewsLink()"
+                <button onclick="copyNewsLink()" aria-label="Copy Link"
                     style="background:none; border:none; cursor:pointer; font-size:20px; opacity:0.7; transition:opacity 0.2s;"
                     onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" title="Copy Link">🔗</button>
             </div>
@@ -204,7 +209,7 @@
                     <h2 id="sector-title" style="font-family:var(--font-serif)">Sector Details</h2>
                     <div style="font-size:12px; opacity:0.6" id="sector-subtitle">Performance Overview</div>
                 </div>
-                <button onclick="closeSector()"
+                <button onclick="closeSector()" aria-label="Close Sector Details"
                     style="background:none;border:none;color:inherit;font-size:20px;cursor:pointer">✕</button>
             </div>
             <div style="overflow-y:auto; flex:1">

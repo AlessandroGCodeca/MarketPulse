@@ -314,8 +314,9 @@ function renderGrid() {
     grid.innerHTML = filteredArticles.length ? filteredArticles.map((a, i) => {
         const sent = getSentiment(a.headline);
         const bookmarked = isBookmarked(a.id);
+        const delay = Math.min(i * 0.05, 0.5);
         return `
-                <div class="article-card" style="cursor:pointer">
+                <div class="article-card" style="cursor:pointer; animation: fadeUp 0.4s ease forwards; animation-delay: ${delay}s; opacity: 0;" tabindex="0" role="button" aria-label="Read article: ${a.headline.replace(/"/g, '&quot;')}" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openNews(${i}); }">
                     <div style="display:flex;justify-content:space-between;margin-bottom:5px">
                          <div style="font-size:10px;opacity:0.6;text-transform:uppercase">${a.source || 'News'}</div>
                          <div style="display:flex;gap:8px;align-items:center">
@@ -367,7 +368,7 @@ function renderHeatmap() {
 
     // Ensure exact same number of DOM nodes exist
     if (container.children.length !== keys.length) {
-        container.innerHTML = keys.map(s => `<div class="heatmap-cell">
+        container.innerHTML = keys.map(s => `<div class="heatmap-cell" tabindex="0" role="button" aria-label="View sector details for ${s}">
                     <div class="heatmap-title" style="font-size:18px;font-weight:bold"></div>
                     <div class="heatmap-change"></div>
                     <div class="heatmap-count" style="font-size:11px;opacity:0.7;margin-top:5px"></div>
@@ -387,6 +388,7 @@ function renderHeatmap() {
         cell.className = `heatmap-cell ${glowClass}`;
         cell.style.background = `hsl(${hue}, ${Math.min(Math.abs(change) * 5000, 80)}%, 30%)`;
         cell.onclick = () => showSectorDetails(s);
+        cell.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showSectorDetails(s); } };
 
         cell.querySelector('.heatmap-title').innerText = s;
         cell.querySelector('.heatmap-change').innerText = `${(change * 100).toFixed(2)}%`;
@@ -416,18 +418,29 @@ function getTVSymbol(name, id, type) {
     return nyse.includes(id) ? `NYSE:${id}` : `NASDAQ:${id}`;
 }
 
+let currentTVSymbol = null;
+
 function openChart(id) {
     currentAssetId = id;
     const asset = assets.find(a => a.id === id);
     document.getElementById('chart-modal').style.display = 'flex';
     document.getElementById('chart-title').innerText = `${asset.name} (${asset.id})`;
 
+    const symbol = getTVSymbol(asset.name, asset.id, asset.type);
+
+    if (currentTVSymbol === symbol) {
+        // Widget already loaded with this symbol, no need to recreate
+        return;
+    }
+
+    currentTVSymbol = symbol;
+
     // Initialize TradingView Widget
     if (document.getElementById('tv-chart')) {
         document.getElementById('tv-chart').innerHTML = ''; // Clear previous
         new TradingView.widget({
             "autosize": true,
-            "symbol": getTVSymbol(asset.name, asset.id, asset.type),
+            "symbol": symbol,
             "interval": "D",
             "timezone": "Etc/UTC",
             "theme": "dark",
