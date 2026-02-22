@@ -14,10 +14,15 @@ function renderTicker() {
         // If the correct number of children don't exist, build them first
         if (container.children.length !== assets.length) {
             container.innerHTML = assets.map(a => `
-                    <div class="ticker-item" id="ticker-item-${container.id}-${a.id}" onclick="openChart('${a.id}')" onmousemove="showTickerTooltip(event, '${a.id}')" onmouseleave="hideTickerTooltip()">
-                        <span class="ticker-id">${a.id}</span>
-                        <svg class="sparkline"></svg>
-                        <span class="ticker-price"></span>
+                    <div class="ticker-item" id="ticker-item-${container.id}-${a.id}" tabindex="0" role="button" aria-label="View chart for ${a.id}" onclick="openChart('${a.id}')" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openChart('${a.id}'); }" onmousemove="showTickerTooltip(event, '${a.id}')" onmouseleave="hideTickerTooltip()">
+                        <div class="ticker-info">
+                            <span class="ticker-id">${a.id}</span>
+                            <span class="ticker-price"></span>
+                        </div>
+                        <div class="ticker-chart">
+                            <span class="ticker-change"></span>
+                            <svg class="sparkline"></svg>
+                        </div>
                     </div>`).join('');
         }
 
@@ -46,6 +51,12 @@ function renderTicker() {
 
             item.className = `ticker-item ${flashClass} ${glowClass}`;
             item.querySelector('.ticker-id').innerText = a.id;
+
+            const changeSpan = item.querySelector('.ticker-change');
+            if (changeSpan) {
+                changeSpan.innerText = change24 > 0 ? `+${(change24 * 100).toFixed(2)}%` : `${(change24 * 100).toFixed(2)}%`;
+                changeSpan.style.color = color;
+            }
 
             const svg = item.querySelector('svg');
             if (svg) {
