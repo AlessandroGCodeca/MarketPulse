@@ -278,26 +278,19 @@ const XSSSanitizer = {
     sanitizeExternalContent(html) {
         if (typeof html !== 'string') return '';
 
-        // Remove script tags and their content
-        let safe = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        // Use DOMPurify if available (loaded via CDN)
+        if (window.DOMPurify) {
+            return DOMPurify.sanitize(html, { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br'] });
+        }
 
-        // Remove event handlers (onclick, onerror, etc.)
+        // Fallback strategy if DOMPurify fails to load
+        let safe = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
         safe = safe.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
         safe = safe.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
-
-        // Remove javascript: URLs
         safe = safe.replace(/javascript\s*:/gi, '');
-
-        // Remove data: URLs (can contain scripts)
         safe = safe.replace(/data\s*:/gi, '');
-
-        // Remove style tags (can contain expressions)
         safe = safe.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
-
-        // Remove iframe, object, embed, form tags
         safe = safe.replace(/<(iframe|object|embed|form|base|link|meta)\b[^>]*>/gi, '');
-
-        // Now strip all remaining tags for plain text
         return this.stripTags(safe);
     },
 
