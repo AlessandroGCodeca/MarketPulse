@@ -74,7 +74,7 @@ const RateLimiter = {
             return {
                 allowed: false,
                 retryAfter,
-                message: `Rate limit exceeded. Please wait ${retryAfter} seconds.`
+                message: ''
             };
         }
 
@@ -95,7 +95,7 @@ const RateLimiter = {
             return {
                 allowed: false,
                 retryAfter,
-                message: `Too many requests to ${endpoint}. Please wait ${retryAfter} seconds.`
+                message: ''
             };
         }
 
@@ -104,7 +104,7 @@ const RateLimiter = {
             return {
                 allowed: false,
                 retryAfter: 10,
-                message: 'Global rate limit reached. Please slow down.'
+                message: ''
             };
         }
 
